@@ -348,10 +348,6 @@ class BarangDatangController extends Controller
         if (!$bd) {
             return $this->error('Barang datang tidak ditemukan', 404);
         }
-        if ($bd->isConfirmed()) {
-            return $this->error('Barang datang sudah dikonfirmasi, tidak dapat diubah', 403);
-        }
-
         $request->validate([
             'catatan'                   => 'nullable|string',
             'details'                   => 'sometimes|array|min:1',

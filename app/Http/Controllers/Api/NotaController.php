@@ -214,10 +214,13 @@ class NotaController extends Controller
             $bayarHtml .= "<tr><td>{$p['metode']} ({$p['tanggal']})</td><td style='text-align:right'>{$fmt($p['nominal'])}</td></tr>";
         }
 
+        $logoUrl = url('images/logo.jpeg');
         return "<!DOCTYPE html>
 <html><head><meta charset='UTF-8'>
 <style>
   body{font-family:monospace;font-size:12px;width:80mm;margin:0 auto;padding:8px}
+  .logo{text-align:center;margin-bottom:4px}
+  .logo img{max-width:60px;max-height:60px;object-fit:contain}
   h2{text-align:center;font-size:14px;margin:4px 0}
   p{margin:2px 0;text-align:center;font-size:11px}
   table{width:100%;border-collapse:collapse}
@@ -227,6 +230,7 @@ class NotaController extends Controller
   .highlight{background:#f0f0f0}
 </style>
 </head><body>
+  <div class='logo'><img src='{$logoUrl}' alt='logo'></div>
   <h2>{$usaha['nama']}</h2>
   <p>{$usaha['alamat']}</p>
   <p>{$usaha['telepon']}</p>
@@ -293,10 +297,13 @@ class NotaController extends Controller
             </tr>";
         }
 
+        $logoUrl = url('images/logo.jpeg');
         return "<!DOCTYPE html>
 <html><head><meta charset='UTF-8'>
 <style>
   body{font-family:Arial,sans-serif;font-size:12px;margin:0;padding:16px}
+  .logo{text-align:center;margin-bottom:6px}
+  .logo img{max-width:80px;max-height:80px;object-fit:contain}
   h2{text-align:center;font-size:16px;margin:4px 0}
   h3{font-size:13px;margin:8px 0 4px}
   p{margin:2px 0;text-align:center;font-size:11px}
@@ -309,6 +316,7 @@ class NotaController extends Controller
   .highlight{background:#e8f5e9;font-weight:bold}
 </style>
 </head><body>
+  <div class='logo'><img src='{$logoUrl}' alt='logo'></div>
   <h2>{$usaha['nama']}</h2>
   <p>{$usaha['alamat']}</p>
   <div class='divider'></div>

@@ -201,6 +201,8 @@ class SettingController extends Controller
             'printer_footer'       => Setting::get('printer_footer', 'Terima kasih sudah berbelanja!'),
             'printer_auto_print'   => filter_var(Setting::get('printer_auto_print', 'true'), FILTER_VALIDATE_BOOLEAN),
             'printer_copies'       => (int) Setting::get('printer_copies', 1),
+            'printer_font_size'    => (int) Setting::get('printer_font_size', 1),
+            'printer_autocut'      => filter_var(Setting::get('printer_autocut', 'true'), FILTER_VALIDATE_BOOLEAN),
         ]);
     }
 
@@ -266,6 +268,8 @@ class SettingController extends Controller
             'printer_footer'       => 'sometimes|nullable|string|max:200',
             'printer_auto_print'   => 'sometimes|required|boolean',
             'printer_copies'       => 'sometimes|required|integer|min:1|max:5',
+            'printer_font_size'    => 'sometimes|required|integer|in:1,2,3',
+            'printer_autocut'      => 'sometimes|required|boolean',
         ]);
 
         $fields = [
@@ -276,6 +280,8 @@ class SettingController extends Controller
             'printer_footer',
             'printer_auto_print',
             'printer_copies',
+            'printer_font_size',
+            'printer_autocut',
         ];
 
         foreach ($fields as $field) {
@@ -297,6 +303,8 @@ class SettingController extends Controller
             'printer_footer'       => Setting::get('printer_footer', 'Terima kasih sudah berbelanja!'),
             'printer_auto_print'   => filter_var(Setting::get('printer_auto_print', 'true'), FILTER_VALIDATE_BOOLEAN),
             'printer_copies'       => (int) Setting::get('printer_copies', 1),
+            'printer_font_size'    => (int) Setting::get('printer_font_size', 1),
+            'printer_autocut'      => filter_var(Setting::get('printer_autocut', 'true'), FILTER_VALIDATE_BOOLEAN),
         ], 'Pengaturan printer berhasil disimpan');
     }
 

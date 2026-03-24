@@ -19,7 +19,10 @@ class Setting extends Model
 
     public static function set(string $key, $value): void
     {
-        self::updateOrCreate(['key' => $key], ['value' => $value]);
+        self::updateOrCreate(
+            ['key' => $key],
+            ['value' => $value, 'label' => $key]
+        );
         Cache::forget("setting_{$key}");
     }
 }

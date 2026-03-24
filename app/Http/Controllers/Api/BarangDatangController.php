@@ -386,8 +386,24 @@ class BarangDatangController extends Controller
                     return $this->error($konflikError, 422);
                 }
 
+                // Simpan data stok & kode existing sebelum dihapus (keyed by nama_produk+ukuran)
+                $existingStok = [];
+                foreach ($bd->details as $d) {
+                    $key = $d->nama_produk . '|' . ($d->ukuran ?? '');
+                    $existingStok[$key] = [
+                        'kode_produk'  => $d->kode_produk,
+                        'stok_awal'    => $d->stok_awal,
+                        'stok_terjual' => $d->stok_terjual,
+                        'stok_sisa'    => $d->stok_sisa,
+                        'status_stok'  => $d->status_stok,
+                    ];
+                }
+
                 $bd->details()->delete();
                 foreach ($request->details as $item) {
+                    $key = $item['nama_produk'] . '|' . ($item['ukuran'] ?? '');
+                    $stok = $existingStok[$key] ?? null;
+
                     DetailBarangDatang::create([
                         'barang_datang_id' => $bd->id,
                         'nama_produk'      => $item['nama_produk'],
@@ -398,6 +414,12 @@ class BarangDatangController extends Controller
                         'harga_jual'       => $item['harga_jual'] ?? 0,
                         'jumlah'           => $item['jumlah'],
                         'keterangan'       => $item['keterangan'] ?? null,
+                        // Restore stok jika produk ini sudah pernah dikonfirmasi
+                        'kode_produk'      => $stok['kode_produk'] ?? null,
+                        'stok_awal'        => $stok ? $stok['stok_awal'] : 0,
+                        'stok_terjual'     => $stok ? $stok['stok_terjual'] : 0,
+                        'stok_sisa'        => $stok ? $stok['stok_sisa'] : 0,
+                        'status_stok'      => $stok ? $stok['status_stok'] : 'draft',
                     ]);
                 }
             }

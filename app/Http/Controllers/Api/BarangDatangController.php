@@ -386,41 +386,103 @@ class BarangDatangController extends Controller
                     return $this->error($konflikError, 422);
                 }
 
-                // Simpan data stok & kode existing sebelum dihapus (keyed by nama_produk+ukuran)
-                $existingStok = [];
-                foreach ($bd->details as $d) {
-                    $key = $d->nama_produk . '|' . ($d->ukuran ?? '');
-                    $existingStok[$key] = [
-                        'kode_produk'  => $d->kode_produk,
-                        'stok_awal'    => $d->stok_awal,
-                        'stok_terjual' => $d->stok_terjual,
-                        'stok_sisa'    => $d->stok_sisa,
-                        'status_stok'  => $d->status_stok,
-                    ];
-                }
+                if ($bd->isDraft()) {
+                    // PATH A: Draft — delete semua lalu buat ulang
+                    $existingStok = [];
+                    foreach ($bd->details as $d) {
+                        $key = $d->nama_produk . '|' . ($d->ukuran ?? '');
+                        $existingStok[$key] = [
+                            'kode_produk'  => $d->kode_produk,
+                            'stok_awal'    => $d->stok_awal,
+                            'stok_terjual' => $d->stok_terjual,
+                            'stok_sisa'    => $d->stok_sisa,
+                            'status_stok'  => $d->status_stok,
+                            'aktif'        => $d->aktif,
+                        ];
+                    }
 
-                $bd->details()->delete();
-                foreach ($request->details as $item) {
-                    $key = $item['nama_produk'] . '|' . ($item['ukuran'] ?? '');
-                    $stok = $existingStok[$key] ?? null;
+                    $bd->details()->delete();
+                    foreach ($request->details as $item) {
+                        $key  = $item['nama_produk'] . '|' . ($item['ukuran'] ?? '');
+                        $stok = $existingStok[$key] ?? null;
 
-                    DetailBarangDatang::create([
-                        'barang_datang_id' => $bd->id,
-                        'nama_produk'      => $item['nama_produk'],
-                        'ukuran'           => $item['ukuran'] ?? null,
-                        'kategori_id'      => $item['kategori_id'] ?? null,
-                        'satuan'           => $item['satuan'],
-                        'harga_beli'       => $item['harga_beli'],
-                        'harga_jual'       => $item['harga_jual'] ?? 0,
-                        'jumlah'           => $item['jumlah'],
-                        'keterangan'       => $item['keterangan'] ?? null,
-                        // Restore stok jika produk ini sudah pernah dikonfirmasi
-                        'kode_produk'      => $stok['kode_produk'] ?? null,
-                        'stok_awal'        => $stok ? $stok['stok_awal'] : 0,
-                        'stok_terjual'     => $stok ? $stok['stok_terjual'] : 0,
-                        'stok_sisa'        => $stok ? $stok['stok_sisa'] : 0,
-                        'status_stok'      => $stok ? $stok['status_stok'] : 'draft',
-                    ]);
+                        DetailBarangDatang::create([
+                            'barang_datang_id' => $bd->id,
+                            'nama_produk'      => $item['nama_produk'],
+                            'ukuran'           => $item['ukuran'] ?? null,
+                            'kategori_id'      => $item['kategori_id'] ?? null,
+                            'satuan'           => $item['satuan'],
+                            'harga_beli'       => $item['harga_beli'],
+                            'harga_jual'       => $item['harga_jual'] ?? 0,
+                            'jumlah'           => $item['jumlah'],
+                            'keterangan'       => $item['keterangan'] ?? null,
+                            'kode_produk'      => $stok['kode_produk'] ?? null,
+                            'stok_awal'        => $stok ? $stok['stok_awal'] : 0,
+                            'stok_terjual'     => $stok ? $stok['stok_terjual'] : 0,
+                            'stok_sisa'        => $stok ? $stok['stok_sisa'] : 0,
+                            'status_stok'      => $stok ? $stok['status_stok'] : 'available',
+                            'aktif'            => $stok ? $stok['aktif'] : true,
+                        ]);
+                    }
+                } else {
+                    // PATH B: Confirmed — update in-place, jaga integritas stok
+                    $existingDetails = [];
+                    foreach ($bd->details as $d) {
+                        $key = $d->nama_produk . '|' . ($d->ukuran ?? '');
+                        $existingDetails[$key] = $d;
+                    }
+
+                    $incomingKeys = [];
+                    foreach ($request->details as $item) {
+                        $key       = $item['nama_produk'] . '|' . ($item['ukuran'] ?? '');
+                        $incomingKeys[] = $key;
+                        $newJumlah = (float) $item['jumlah'];
+
+                        if (isset($existingDetails[$key])) {
+                            // Detail sudah ada — update in-place, recalc stok
+                            $d = $existingDetails[$key];
+                            $d->update([
+                                'kategori_id' => $item['kategori_id'] ?? null,
+                                'satuan'      => $item['satuan'],
+                                'harga_beli'  => $item['harga_beli'],
+                                'harga_jual'  => $item['harga_jual'] ?? 0,
+                                'jumlah'      => $newJumlah,
+                                'keterangan'  => $item['keterangan'] ?? null,
+                                'stok_awal'   => $newJumlah,
+                                'stok_sisa'   => max(0, $newJumlah - $d->stok_terjual),
+                                'status_stok' => ($newJumlah - $d->stok_terjual) <= 0 ? 'habis' : 'available',
+                            ]);
+                        } else {
+                            // Detail baru ditambahkan ke confirmed record
+                            DetailBarangDatang::create([
+                                'barang_datang_id' => $bd->id,
+                                'kode_produk'      => DetailBarangDatang::generateKode(),
+                                'nama_produk'      => $item['nama_produk'],
+                                'ukuran'           => $item['ukuran'] ?? null,
+                                'kategori_id'      => $item['kategori_id'] ?? null,
+                                'satuan'           => $item['satuan'],
+                                'harga_beli'       => $item['harga_beli'],
+                                'harga_jual'       => $item['harga_jual'] ?? 0,
+                                'jumlah'           => $newJumlah,
+                                'keterangan'       => $item['keterangan'] ?? null,
+                                'stok_awal'        => $newJumlah,
+                                'stok_terjual'     => 0,
+                                'stok_sisa'        => $newJumlah,
+                                'status_stok'      => 'available',
+                                'aktif'            => true,
+                            ]);
+                        }
+                    }
+
+                    // Detail yang dihapus: soft-delete jika ada transaksi, hard-delete jika belum
+                    foreach ($existingDetails as $key => $d) {
+                        if (in_array($key, $incomingKeys)) continue;
+                        if ($d->stok_terjual > 0) {
+                            $d->update(['aktif' => false]);
+                        } else {
+                            $d->delete();
+                        }
+                    }
                 }
             }
 
@@ -629,6 +691,7 @@ class BarangDatangController extends Controller
             ->join('barang_datang', 'detail_barang_datang.barang_datang_id', '=', 'barang_datang.id')
             ->where('barang_datang.supplier_id', $supplierId)
             ->where('barang_datang.status', 'confirmed')
+            ->where('detail_barang_datang.aktif', true)
             ->orderBy('barang_datang.tanggal', 'asc')
             ->orderBy('barang_datang.urutan_hari', 'asc')
             ->orderBy('detail_barang_datang.id', 'asc')

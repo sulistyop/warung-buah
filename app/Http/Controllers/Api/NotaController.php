@@ -183,6 +183,15 @@ class NotaController extends Controller
         return $this->success($data);
     }
 
+    private function getLogoTag(int $maxSize = 70): string
+    {
+        $logoPath = public_path('images/logo.jpeg');
+        if (!file_exists($logoPath)) return '';
+        $mime    = mime_content_type($logoPath) ?: 'image/jpeg';
+        $base64  = base64_encode(file_get_contents($logoPath));
+        return "<img src=\"data:{$mime};base64,{$base64}\" style=\"max-width:{$maxSize}px;max-height:{$maxSize}px;object-fit:contain\" alt=\"logo\">";
+    }
+
     private function renderNotaTransaksiHtml(array $data): string
     {
         $usaha    = $data['usaha'];
@@ -214,10 +223,7 @@ class NotaController extends Controller
             $bayarHtml .= "<tr><td>{$p['metode']} ({$p['tanggal']})</td><td style='text-align:right'>{$fmt($p['nominal'])}</td></tr>";
         }
 
-        $logoPath = public_path('images/logo.jpeg');
-        $logoTag = file_exists($logoPath)
-            ? '<img src="' . $logoPath . '" alt="logo">'
-            : '';
+        $logoTag = $this->getLogoTag(60);
         return "<!DOCTYPE html>
 <html><head><meta charset='UTF-8'>
 <style>
@@ -300,10 +306,7 @@ class NotaController extends Controller
             </tr>";
         }
 
-        $logoPath = public_path('images/logo.jpeg');
-        $logoTag = file_exists($logoPath)
-            ? '<img src="' . $logoPath . '" alt="logo">'
-            : '';
+        $logoTag = $this->getLogoTag(80);
         return "<!DOCTYPE html>
 <html><head><meta charset='UTF-8'>
 <style>

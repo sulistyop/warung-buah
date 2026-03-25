@@ -214,7 +214,10 @@ class NotaController extends Controller
             $bayarHtml .= "<tr><td>{$p['metode']} ({$p['tanggal']})</td><td style='text-align:right'>{$fmt($p['nominal'])}</td></tr>";
         }
 
-        $logoUrl = url('images/logo.jpeg');
+        $logoPath = public_path('images/logo.jpeg');
+        $logoTag = file_exists($logoPath)
+            ? '<img src="' . $logoPath . '" alt="logo">'
+            : '';
         return "<!DOCTYPE html>
 <html><head><meta charset='UTF-8'>
 <style>
@@ -230,7 +233,7 @@ class NotaController extends Controller
   .highlight{background:#f0f0f0}
 </style>
 </head><body>
-  <div class='logo'><img src='{$logoUrl}' alt='logo'></div>
+  <div class='logo'>{$logoTag}</div>
   <h2>{$usaha['nama']}</h2>
   <p>{$usaha['alamat']}</p>
   <p>{$usaha['telepon']}</p>
@@ -297,7 +300,10 @@ class NotaController extends Controller
             </tr>";
         }
 
-        $logoUrl = url('images/logo.jpeg');
+        $logoPath = public_path('images/logo.jpeg');
+        $logoTag = file_exists($logoPath)
+            ? '<img src="' . $logoPath . '" alt="logo">'
+            : '';
         return "<!DOCTYPE html>
 <html><head><meta charset='UTF-8'>
 <style>
@@ -316,7 +322,7 @@ class NotaController extends Controller
   .highlight{background:#e8f5e9;font-weight:bold}
 </style>
 </head><body>
-  <div class='logo'><img src='{$logoUrl}' alt='logo'></div>
+  <div class='logo'>{$logoTag}</div>
   <h2>{$usaha['nama']}</h2>
   <p>{$usaha['alamat']}</p>
   <div class='divider'></div>

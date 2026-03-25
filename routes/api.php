@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\NotaController;
 use App\Http\Controllers\Api\KasLaciController;
 use App\Http\Controllers\Api\LogAktivitasController;
 use App\Http\Controllers\Api\UserManagementController;
+use App\Http\Controllers\Api\LaporanController;
 use Illuminate\Support\Facades\Route;
 
 // Root API endpoint
@@ -181,4 +182,25 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ── Log Aktivitas (admin only) ────────────────────────────────────────────
     Route::get('/log-aktivitas', [LogAktivitasController::class, 'index']);
+
+    // ── Laporan ───────────────────────────────────────────────────────────────
+    Route::prefix('laporan')->group(function () {
+        Route::get('/penjualan', [LaporanController::class, 'penjualan'])->middleware('permission:transaksi,read');
+        Route::get('/penjualan/export', [LaporanController::class, 'exportPenjualan'])->middleware('permission:transaksi,read');
+
+        Route::get('/rekap-supplier', [LaporanController::class, 'rekapSupplier'])->middleware('permission:rekap,read');
+        Route::get('/rekap-supplier/export', [LaporanController::class, 'exportRekapSupplier'])->middleware('permission:rekap,read');
+
+        Route::get('/piutang', [LaporanController::class, 'piutang'])->middleware('permission:piutang,read');
+        Route::get('/piutang/export', [LaporanController::class, 'exportPiutang'])->middleware('permission:piutang,read');
+
+        Route::get('/kas-laci', [LaporanController::class, 'kasLaci'])->middleware('permission:kas_laci,read');
+        Route::get('/kas-laci/export', [LaporanController::class, 'exportKasLaci'])->middleware('permission:kas_laci,read');
+
+        Route::get('/stok-masuk', [LaporanController::class, 'stokMasuk'])->middleware('permission:barang_datang,read');
+        Route::get('/stok-masuk/export', [LaporanController::class, 'exportStokMasuk'])->middleware('permission:barang_datang,read');
+
+        Route::get('/pelanggan-terbaik', [LaporanController::class, 'pelangganTerbaik'])->middleware('permission:transaksi,read');
+        Route::get('/pelanggan-terbaik/export', [LaporanController::class, 'exportPelangganTerbaik'])->middleware('permission:transaksi,read');
+    });
 });

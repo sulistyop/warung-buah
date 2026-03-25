@@ -1435,6 +1435,187 @@
                 ]
             }
         },
+        "/kas-laci": {
+            "get": {
+                "tags": [
+                    "Kas Laci"
+                ],
+                "summary": "List entri kas laci",
+                "operationId": "662a2934e98ef3bf78994fcc7bca70a0",
+                "parameters": [
+                    {
+                        "name": "tanggal_dari",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "tanggal_sampai",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "jenis",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "masuk",
+                                "keluar"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Kas Laci"
+                ],
+                "summary": "Input manual kas laci (masuk atau keluar)",
+                "operationId": "c528342694c1c3566fafa0ac290b9b5a",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "tanggal",
+                                    "keterangan",
+                                    "jenis",
+                                    "nominal"
+                                ],
+                                "properties": {
+                                    "tanggal": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "keterangan": {
+                                        "type": "string"
+                                    },
+                                    "jenis": {
+                                        "type": "string",
+                                        "enum": [
+                                            "masuk",
+                                            "keluar"
+                                        ]
+                                    },
+                                    "nominal": {
+                                        "type": "number"
+                                    },
+                                    "metode_sumber": {
+                                        "type": "string",
+                                        "enum": [
+                                            "tunai",
+                                            "transfer",
+                                            "qris",
+                                            "lainnya"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/kas-laci/summary": {
+            "get": {
+                "tags": [
+                    "Kas Laci"
+                ],
+                "summary": "Ringkasan kas laci (total masuk, keluar, saldo)",
+                "operationId": "7998cd5be0c4e2a646ff9a262380ecfd",
+                "parameters": [
+                    {
+                        "name": "tanggal_dari",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "tanggal_sampai",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/kas-laci/{id}": {
+            "delete": {
+                "tags": [
+                    "Kas Laci"
+                ],
+                "summary": "Hapus entri kas laci manual",
+                "operationId": "c5dd64991a6166f8548c9a5ff27770a3",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    },
+                    "403": {
+                        "description": "Entri otomatis tidak dapat dihapus"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/kategori": {
             "get": {
                 "tags": [
@@ -1927,6 +2108,1210 @@
                                 }
                             }
                         }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/laporan/penjualan": {
+            "get": {
+                "tags": [
+                    "Laporan"
+                ],
+                "summary": "Laporan penjualan",
+                "description": "Ringkasan penjualan: total transaksi, omset, status bayar, dan rincian per hari",
+                "operationId": "getLaporanPenjualan",
+                "parameters": [
+                    {
+                        "name": "tanggal_dari",
+                        "in": "query",
+                        "description": "Filter tanggal mulai (YYYY-MM-DD)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2026-01-01"
+                        }
+                    },
+                    {
+                        "name": "tanggal_sampai",
+                        "in": "query",
+                        "description": "Filter tanggal akhir (YYYY-MM-DD)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2026-03-31"
+                        }
+                    },
+                    {
+                        "name": "status_bayar",
+                        "in": "query",
+                        "description": "Filter status bayar",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "lunas",
+                                "tempo",
+                                "cicil"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Success"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "summary": {
+                                                    "properties": {
+                                                        "total_transaksi": {
+                                                            "type": "integer",
+                                                            "example": 25
+                                                        },
+                                                        "total_omset": {
+                                                            "type": "number",
+                                                            "example": 50000000
+                                                        },
+                                                        "total_dibayar": {
+                                                            "type": "number",
+                                                            "example": 40000000
+                                                        },
+                                                        "total_piutang": {
+                                                            "type": "number",
+                                                            "example": 10000000
+                                                        },
+                                                        "jumlah_lunas": {
+                                                            "type": "integer",
+                                                            "example": 18
+                                                        },
+                                                        "jumlah_tempo": {
+                                                            "type": "integer",
+                                                            "example": 5
+                                                        },
+                                                        "jumlah_cicil": {
+                                                            "type": "integer",
+                                                            "example": 2
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "per_hari": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "tanggal": {
+                                                                "type": "string",
+                                                                "example": "2026-03-24"
+                                                            },
+                                                            "jumlah": {
+                                                                "type": "integer",
+                                                                "example": 5
+                                                            },
+                                                            "total_omset": {
+                                                                "type": "number",
+                                                                "example": 10000000
+                                                            },
+                                                            "total_dibayar": {
+                                                                "type": "number",
+                                                                "example": 8000000
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "data": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/Transaksi"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "422": {
+                        "description": "Validation Error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/laporan/penjualan/export": {
+            "get": {
+                "tags": [
+                    "Laporan"
+                ],
+                "summary": "Export laporan penjualan ke Excel",
+                "description": "Download file Excel laporan penjualan berdasarkan filter tanggal",
+                "operationId": "exportLaporanPenjualan",
+                "parameters": [
+                    {
+                        "name": "tanggal_dari",
+                        "in": "query",
+                        "description": "Filter tanggal mulai (YYYY-MM-DD)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2026-01-01"
+                        }
+                    },
+                    {
+                        "name": "tanggal_sampai",
+                        "in": "query",
+                        "description": "Filter tanggal akhir (YYYY-MM-DD)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2026-03-31"
+                        }
+                    },
+                    {
+                        "name": "status_bayar",
+                        "in": "query",
+                        "description": "Filter status bayar",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "lunas",
+                                "tempo",
+                                "cicil"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "File Excel berhasil diunduh",
+                        "headers": {
+                            "Content-Disposition": {
+                                "description": "attachment; filename=\"laporan-penjualan-YYYYMMDD-HHiiss.xlsx\"",
+                                "schema": {
+                                    "type": "string"
+                                }
+                            },
+                            "Content-Type": {
+                                "description": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/laporan/rekap-supplier": {
+            "get": {
+                "tags": [
+                    "Laporan"
+                ],
+                "summary": "Laporan rekap supplier",
+                "description": "Ringkasan rekap supplier: total rekap, peti, pendapatan bersih, sisa, per supplier",
+                "operationId": "getLaporanRekapSupplier",
+                "parameters": [
+                    {
+                        "name": "tanggal_dari",
+                        "in": "query",
+                        "description": "Filter tanggal mulai (YYYY-MM-DD)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2026-01-01"
+                        }
+                    },
+                    {
+                        "name": "tanggal_sampai",
+                        "in": "query",
+                        "description": "Filter tanggal akhir (YYYY-MM-DD)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2026-03-31"
+                        }
+                    },
+                    {
+                        "name": "supplier_id",
+                        "in": "query",
+                        "description": "Filter supplier tertentu",
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter status rekap",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "draft",
+                                "final"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Success"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "summary": {
+                                                    "properties": {
+                                                        "total_rekap": {
+                                                            "type": "integer",
+                                                            "example": 10
+                                                        },
+                                                        "total_peti": {
+                                                            "type": "integer",
+                                                            "example": 200
+                                                        },
+                                                        "total_kotor": {
+                                                            "type": "number",
+                                                            "example": 80000000
+                                                        },
+                                                        "total_komisi": {
+                                                            "type": "number",
+                                                            "example": 5600000
+                                                        },
+                                                        "total_kuli": {
+                                                            "type": "number",
+                                                            "example": 1000000
+                                                        },
+                                                        "total_ongkos": {
+                                                            "type": "number",
+                                                            "example": 500000
+                                                        },
+                                                        "total_busuk": {
+                                                            "type": "number",
+                                                            "example": 200000
+                                                        },
+                                                        "total_pendapatan_bersih": {
+                                                            "type": "number",
+                                                            "example": 72700000
+                                                        },
+                                                        "total_sisa": {
+                                                            "type": "number",
+                                                            "example": 7300000
+                                                        },
+                                                        "jumlah_draft": {
+                                                            "type": "integer",
+                                                            "example": 2
+                                                        },
+                                                        "jumlah_final": {
+                                                            "type": "integer",
+                                                            "example": 8
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "per_supplier": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "supplier": {
+                                                                "type": "string",
+                                                                "example": "PT Buah Segar"
+                                                            },
+                                                            "jumlah_rekap": {
+                                                                "type": "integer",
+                                                                "example": 3
+                                                            },
+                                                            "total_peti": {
+                                                                "type": "integer",
+                                                                "example": 60
+                                                            },
+                                                            "total_sisa": {
+                                                                "type": "number",
+                                                                "example": 2500000
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "data": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "description": "Data rekap supplier",
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/laporan/rekap-supplier/export": {
+            "get": {
+                "tags": [
+                    "Laporan"
+                ],
+                "summary": "Export laporan rekap supplier ke Excel",
+                "description": "Download file Excel laporan rekap supplier",
+                "operationId": "exportLaporanRekapSupplier",
+                "parameters": [
+                    {
+                        "name": "tanggal_dari",
+                        "in": "query",
+                        "description": "Filter tanggal mulai (YYYY-MM-DD)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "tanggal_sampai",
+                        "in": "query",
+                        "description": "Filter tanggal akhir (YYYY-MM-DD)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "supplier_id",
+                        "in": "query",
+                        "description": "Filter supplier tertentu",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter status rekap",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "draft",
+                                "final"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "File Excel berhasil diunduh",
+                        "content": {
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/laporan/piutang": {
+            "get": {
+                "tags": [
+                    "Laporan"
+                ],
+                "summary": "Laporan piutang",
+                "description": "Ringkasan piutang aktif (tempo/cicil belum lunas) dengan analisis aging (0-30, 31-60, 61-90, >90 hari)",
+                "operationId": "getLaporanPiutang",
+                "parameters": [
+                    {
+                        "name": "tanggal_dari",
+                        "in": "query",
+                        "description": "Filter tanggal transaksi mulai (YYYY-MM-DD)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2026-01-01"
+                        }
+                    },
+                    {
+                        "name": "tanggal_sampai",
+                        "in": "query",
+                        "description": "Filter tanggal transaksi akhir (YYYY-MM-DD)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2026-03-31"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Success"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "summary": {
+                                                    "properties": {
+                                                        "total_piutang": {
+                                                            "type": "number",
+                                                            "example": 15000000
+                                                        },
+                                                        "jumlah_pelanggan": {
+                                                            "type": "integer",
+                                                            "example": 8
+                                                        },
+                                                        "jumlah_transaksi": {
+                                                            "type": "integer",
+                                                            "example": 12
+                                                        },
+                                                        "overdue": {
+                                                            "type": "number",
+                                                            "example": 3000000
+                                                        },
+                                                        "aging": {
+                                                            "properties": {
+                                                                "0-30": {
+                                                                    "type": "number",
+                                                                    "example": 8000000
+                                                                },
+                                                                "31-60": {
+                                                                    "type": "number",
+                                                                    "example": 4000000
+                                                                },
+                                                                "61-90": {
+                                                                    "type": "number",
+                                                                    "example": 2000000
+                                                                },
+                                                                ">90": {
+                                                                    "type": "number",
+                                                                    "example": 1000000
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "data": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "allOf": [
+                                                            {
+                                                                "$ref": "#/components/schemas/Transaksi"
+                                                            },
+                                                            {
+                                                                "properties": {
+                                                                    "umur_hari": {
+                                                                        "type": "integer",
+                                                                        "example": 15
+                                                                    },
+                                                                    "is_overdue": {
+                                                                        "type": "boolean",
+                                                                        "example": false
+                                                                    }
+                                                                },
+                                                                "type": "object"
+                                                            }
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/laporan/piutang/export": {
+            "get": {
+                "tags": [
+                    "Laporan"
+                ],
+                "summary": "Export laporan piutang ke Excel",
+                "description": "Download file Excel laporan piutang aktif",
+                "operationId": "exportLaporanPiutang",
+                "parameters": [
+                    {
+                        "name": "tanggal_dari",
+                        "in": "query",
+                        "description": "Filter tanggal mulai (YYYY-MM-DD)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "tanggal_sampai",
+                        "in": "query",
+                        "description": "Filter tanggal akhir (YYYY-MM-DD)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "File Excel berhasil diunduh",
+                        "content": {
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/laporan/kas-laci": {
+            "get": {
+                "tags": [
+                    "Laporan"
+                ],
+                "summary": "Laporan kas laci",
+                "description": "Ringkasan kas laci: total masuk, total keluar, saldo periode, rincian per hari",
+                "operationId": "getLaporanKasLaci",
+                "parameters": [
+                    {
+                        "name": "tanggal_dari",
+                        "in": "query",
+                        "description": "Filter tanggal mulai (YYYY-MM-DD)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2026-01-01"
+                        }
+                    },
+                    {
+                        "name": "tanggal_sampai",
+                        "in": "query",
+                        "description": "Filter tanggal akhir (YYYY-MM-DD)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2026-03-31"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Success"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "summary": {
+                                                    "properties": {
+                                                        "total_masuk": {
+                                                            "type": "number",
+                                                            "example": 30000000
+                                                        },
+                                                        "total_keluar": {
+                                                            "type": "number",
+                                                            "example": 10000000
+                                                        },
+                                                        "saldo_periode": {
+                                                            "type": "number",
+                                                            "example": 20000000
+                                                        },
+                                                        "total_entri": {
+                                                            "type": "integer",
+                                                            "example": 45
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "per_hari": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "tanggal": {
+                                                                "type": "string",
+                                                                "example": "2026-03-24"
+                                                            },
+                                                            "total_masuk": {
+                                                                "type": "number",
+                                                                "example": 2000000
+                                                            },
+                                                            "total_keluar": {
+                                                                "type": "number",
+                                                                "example": 500000
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "data": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "description": "Data kas laci",
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/laporan/kas-laci/export": {
+            "get": {
+                "tags": [
+                    "Laporan"
+                ],
+                "summary": "Export laporan kas laci ke Excel",
+                "description": "Download file Excel laporan kas laci",
+                "operationId": "exportLaporanKasLaci",
+                "parameters": [
+                    {
+                        "name": "tanggal_dari",
+                        "in": "query",
+                        "description": "Filter tanggal mulai (YYYY-MM-DD)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "tanggal_sampai",
+                        "in": "query",
+                        "description": "Filter tanggal akhir (YYYY-MM-DD)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "File Excel berhasil diunduh",
+                        "content": {
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/laporan/stok-masuk": {
+            "get": {
+                "tags": [
+                    "Laporan"
+                ],
+                "summary": "Laporan stok masuk",
+                "description": "Ringkasan stok masuk dari barang datang: total pengiriman, produk, stok masuk, terjual, dan sisa",
+                "operationId": "getLaporanStokMasuk",
+                "parameters": [
+                    {
+                        "name": "tanggal_dari",
+                        "in": "query",
+                        "description": "Filter tanggal mulai (YYYY-MM-DD)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2026-01-01"
+                        }
+                    },
+                    {
+                        "name": "tanggal_sampai",
+                        "in": "query",
+                        "description": "Filter tanggal akhir (YYYY-MM-DD)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2026-03-31"
+                        }
+                    },
+                    {
+                        "name": "supplier_id",
+                        "in": "query",
+                        "description": "Filter supplier tertentu",
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Success"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "summary": {
+                                                    "properties": {
+                                                        "total_bd": {
+                                                            "description": "Total barang datang (pengiriman)",
+                                                            "type": "integer",
+                                                            "example": 15
+                                                        },
+                                                        "total_produk": {
+                                                            "description": "Total item produk",
+                                                            "type": "integer",
+                                                            "example": 45
+                                                        },
+                                                        "total_stok_masuk": {
+                                                            "description": "Total peti masuk",
+                                                            "type": "integer",
+                                                            "example": 300
+                                                        },
+                                                        "total_terjual": {
+                                                            "description": "Total peti terjual",
+                                                            "type": "integer",
+                                                            "example": 250
+                                                        },
+                                                        "total_sisa": {
+                                                            "description": "Total peti sisa",
+                                                            "type": "integer",
+                                                            "example": 50
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "data": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/BarangDatang"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/laporan/stok-masuk/export": {
+            "get": {
+                "tags": [
+                    "Laporan"
+                ],
+                "summary": "Export laporan stok masuk ke Excel",
+                "description": "Download file Excel laporan stok masuk dari barang datang",
+                "operationId": "exportLaporanStokMasuk",
+                "parameters": [
+                    {
+                        "name": "tanggal_dari",
+                        "in": "query",
+                        "description": "Filter tanggal mulai (YYYY-MM-DD)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "tanggal_sampai",
+                        "in": "query",
+                        "description": "Filter tanggal akhir (YYYY-MM-DD)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "supplier_id",
+                        "in": "query",
+                        "description": "Filter supplier tertentu",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "File Excel berhasil diunduh",
+                        "content": {
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/laporan/pelanggan-terbaik": {
+            "get": {
+                "tags": [
+                    "Laporan"
+                ],
+                "summary": "Laporan pelanggan terbaik",
+                "description": "Ranking pelanggan berdasarkan total omset dalam periode tertentu",
+                "operationId": "getLaporanPelangganTerbaik",
+                "parameters": [
+                    {
+                        "name": "tanggal_dari",
+                        "in": "query",
+                        "description": "Filter tanggal mulai (YYYY-MM-DD)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2026-01-01"
+                        }
+                    },
+                    {
+                        "name": "tanggal_sampai",
+                        "in": "query",
+                        "description": "Filter tanggal akhir (YYYY-MM-DD)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2026-03-31"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Jumlah pelanggan yang ditampilkan (5-100, default: 20)",
+                        "schema": {
+                            "type": "integer",
+                            "default": 20,
+                            "maximum": 100,
+                            "minimum": 5
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Success"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "summary": {
+                                                    "properties": {
+                                                        "total_pelanggan": {
+                                                            "type": "integer",
+                                                            "example": 20
+                                                        },
+                                                        "total_omset": {
+                                                            "type": "number",
+                                                            "example": 150000000
+                                                        },
+                                                        "top_pelanggan": {
+                                                            "type": "string",
+                                                            "example": "Toko Buah Segar"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "data": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "ranking": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "nama_pelanggan": {
+                                                                "type": "string",
+                                                                "example": "Toko Buah Segar"
+                                                            },
+                                                            "total_transaksi": {
+                                                                "type": "integer",
+                                                                "example": 15
+                                                            },
+                                                            "total_omset": {
+                                                                "type": "number",
+                                                                "example": 25000000
+                                                            },
+                                                            "total_dibayar": {
+                                                                "type": "number",
+                                                                "example": 20000000
+                                                            },
+                                                            "total_piutang": {
+                                                                "type": "number",
+                                                                "example": 5000000
+                                                            },
+                                                            "transaksi_terakhir": {
+                                                                "type": "string",
+                                                                "format": "date-time",
+                                                                "example": "2026-03-25T10:00:00.000000Z"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/laporan/pelanggan-terbaik/export": {
+            "get": {
+                "tags": [
+                    "Laporan"
+                ],
+                "summary": "Export laporan pelanggan terbaik ke Excel",
+                "description": "Download file Excel ranking pelanggan terbaik",
+                "operationId": "exportLaporanPelangganTerbaik",
+                "parameters": [
+                    {
+                        "name": "tanggal_dari",
+                        "in": "query",
+                        "description": "Filter tanggal mulai (YYYY-MM-DD)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "tanggal_sampai",
+                        "in": "query",
+                        "description": "Filter tanggal akhir (YYYY-MM-DD)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "File Excel berhasil diunduh",
+                        "content": {
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Forbidden"
                     }
                 },
                 "security": [
@@ -4912,142 +6297,6 @@
                     }
                 ]
             }
-        },
-        "/users": {
-            "get": {
-                "tags": [
-                    "User Management"
-                ],
-                "summary": "List semua user (admin only)",
-                "operationId": "52e7f3b0d138c281ad8081c1de031deb",
-                "responses": {
-                    "200": {
-                        "description": "Success"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "post": {
-                "tags": [
-                    "User Management"
-                ],
-                "summary": "Tambah user baru (admin only)",
-                "operationId": "e7201f53afa9f52ac7bcee76fcfa2d5c",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "name",
-                                    "email",
-                                    "password",
-                                    "role"
-                                ],
-                                "properties": {
-                                    "name": {
-                                        "type": "string"
-                                    },
-                                    "email": {
-                                        "type": "string",
-                                        "format": "email"
-                                    },
-                                    "password": {
-                                        "type": "string",
-                                        "minLength": 8
-                                    },
-                                    "role": {
-                                        "type": "string",
-                                        "enum": [
-                                            "admin",
-                                            "kasir",
-                                            "operator"
-                                        ]
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "Created"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/users/{id}": {
-            "put": {
-                "tags": [
-                    "User Management"
-                ],
-                "summary": "Update user (admin only)",
-                "operationId": "b5827b31de4d4ac48ba5f7f64e6f0b14",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {}
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Success"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "delete": {
-                "tags": [
-                    "User Management"
-                ],
-                "summary": "Nonaktifkan user (admin only)",
-                "operationId": "6a4a22c0b8d5aaa5e7ab35470cdb58b0",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Success"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
         }
     },
     "components": {
@@ -5864,6 +7113,14 @@
             "description": "Deposit"
         },
         {
+            "name": "Kas Laci",
+            "description": "Kas Laci"
+        },
+        {
+            "name": "Laporan",
+            "description": "Laporan"
+        },
+        {
             "name": "Log Aktivitas",
             "description": "Log Aktivitas"
         },
@@ -5886,10 +7143,6 @@
         {
             "name": "Rekap",
             "description": "Rekap"
-        },
-        {
-            "name": "User Management",
-            "description": "User Management"
         }
     ]
 }

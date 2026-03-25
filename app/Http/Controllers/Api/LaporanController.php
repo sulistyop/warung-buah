@@ -16,11 +16,72 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
+use OpenApi\Attributes as OA;
 
 class LaporanController extends Controller
 {
     // ─── 1. Laporan Penjualan ────────────────────────────────────────────────
 
+    #[OA\Get(
+        path: '/laporan/penjualan',
+        summary: 'Laporan penjualan',
+        description: 'Ringkasan penjualan: total transaksi, omset, status bayar, dan rincian per hari',
+        operationId: 'getLaporanPenjualan',
+        tags: ['Laporan'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(name: 'tanggal_dari', in: 'query', description: 'Filter tanggal mulai (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', format: 'date', example: '2026-01-01')),
+            new OA\Parameter(name: 'tanggal_sampai', in: 'query', description: 'Filter tanggal akhir (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', format: 'date', example: '2026-03-31')),
+            new OA\Parameter(name: 'status_bayar', in: 'query', description: 'Filter status bayar', schema: new OA\Schema(type: 'string', enum: ['lunas', 'tempo', 'cicil'])),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Success',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'success', type: 'boolean', example: true),
+                        new OA\Property(property: 'message', type: 'string', example: 'Success'),
+                        new OA\Property(
+                            property: 'data',
+                            type: 'object',
+                            properties: [
+                                new OA\Property(
+                                    property: 'summary',
+                                    type: 'object',
+                                    properties: [
+                                        new OA\Property(property: 'total_transaksi', type: 'integer', example: 25),
+                                        new OA\Property(property: 'total_omset', type: 'number', example: 50000000),
+                                        new OA\Property(property: 'total_dibayar', type: 'number', example: 40000000),
+                                        new OA\Property(property: 'total_piutang', type: 'number', example: 10000000),
+                                        new OA\Property(property: 'jumlah_lunas', type: 'integer', example: 18),
+                                        new OA\Property(property: 'jumlah_tempo', type: 'integer', example: 5),
+                                        new OA\Property(property: 'jumlah_cicil', type: 'integer', example: 2),
+                                    ]
+                                ),
+                                new OA\Property(
+                                    property: 'per_hari',
+                                    type: 'array',
+                                    items: new OA\Items(
+                                        properties: [
+                                            new OA\Property(property: 'tanggal', type: 'string', example: '2026-03-24'),
+                                            new OA\Property(property: 'jumlah', type: 'integer', example: 5),
+                                            new OA\Property(property: 'total_omset', type: 'number', example: 10000000),
+                                            new OA\Property(property: 'total_dibayar', type: 'number', example: 8000000),
+                                        ]
+                                    )
+                                ),
+                                new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/Transaksi')),
+                            ]
+                        ),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 422, description: 'Validation Error'),
+        ]
+    )]
     public function penjualan(Request $request)
     {
         $request->validate([
@@ -63,6 +124,32 @@ class LaporanController extends Controller
         ]);
     }
 
+    #[OA\Get(
+        path: '/laporan/penjualan/export',
+        summary: 'Export laporan penjualan ke Excel',
+        description: 'Download file Excel laporan penjualan berdasarkan filter tanggal',
+        operationId: 'exportLaporanPenjualan',
+        tags: ['Laporan'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(name: 'tanggal_dari', in: 'query', description: 'Filter tanggal mulai (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', format: 'date', example: '2026-01-01')),
+            new OA\Parameter(name: 'tanggal_sampai', in: 'query', description: 'Filter tanggal akhir (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', format: 'date', example: '2026-03-31')),
+            new OA\Parameter(name: 'status_bayar', in: 'query', description: 'Filter status bayar', schema: new OA\Schema(type: 'string', enum: ['lunas', 'tempo', 'cicil'])),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'File Excel berhasil diunduh',
+                headers: [
+                    'Content-Disposition' => new OA\Header(header: 'Content-Disposition', description: 'attachment; filename="laporan-penjualan-YYYYMMDD-HHiiss.xlsx"', schema: new OA\Schema(type: 'string')),
+                    'Content-Type' => new OA\Header(header: 'Content-Type', description: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', schema: new OA\Schema(type: 'string')),
+                ],
+                content: new OA\MediaType(mediaType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', schema: new OA\Schema(type: 'string', format: 'binary'))
+            ),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+        ]
+    )]
     public function exportPenjualan(Request $request)
     {
         $request->validate([
@@ -85,6 +172,70 @@ class LaporanController extends Controller
 
     // ─── 2. Laporan Rekap Supplier ───────────────────────────────────────────
 
+    #[OA\Get(
+        path: '/laporan/rekap-supplier',
+        summary: 'Laporan rekap supplier',
+        description: 'Ringkasan rekap supplier: total rekap, peti, pendapatan bersih, sisa, per supplier',
+        operationId: 'getLaporanRekapSupplier',
+        tags: ['Laporan'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(name: 'tanggal_dari', in: 'query', description: 'Filter tanggal mulai (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', format: 'date', example: '2026-01-01')),
+            new OA\Parameter(name: 'tanggal_sampai', in: 'query', description: 'Filter tanggal akhir (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', format: 'date', example: '2026-03-31')),
+            new OA\Parameter(name: 'supplier_id', in: 'query', description: 'Filter supplier tertentu', schema: new OA\Schema(type: 'integer', example: 1)),
+            new OA\Parameter(name: 'status', in: 'query', description: 'Filter status rekap', schema: new OA\Schema(type: 'string', enum: ['draft', 'final'])),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Success',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'success', type: 'boolean', example: true),
+                        new OA\Property(property: 'message', type: 'string', example: 'Success'),
+                        new OA\Property(
+                            property: 'data',
+                            type: 'object',
+                            properties: [
+                                new OA\Property(
+                                    property: 'summary',
+                                    type: 'object',
+                                    properties: [
+                                        new OA\Property(property: 'total_rekap', type: 'integer', example: 10),
+                                        new OA\Property(property: 'total_peti', type: 'integer', example: 200),
+                                        new OA\Property(property: 'total_kotor', type: 'number', example: 80000000),
+                                        new OA\Property(property: 'total_komisi', type: 'number', example: 5600000),
+                                        new OA\Property(property: 'total_kuli', type: 'number', example: 1000000),
+                                        new OA\Property(property: 'total_ongkos', type: 'number', example: 500000),
+                                        new OA\Property(property: 'total_busuk', type: 'number', example: 200000),
+                                        new OA\Property(property: 'total_pendapatan_bersih', type: 'number', example: 72700000),
+                                        new OA\Property(property: 'total_sisa', type: 'number', example: 7300000),
+                                        new OA\Property(property: 'jumlah_draft', type: 'integer', example: 2),
+                                        new OA\Property(property: 'jumlah_final', type: 'integer', example: 8),
+                                    ]
+                                ),
+                                new OA\Property(
+                                    property: 'per_supplier',
+                                    type: 'array',
+                                    items: new OA\Items(
+                                        properties: [
+                                            new OA\Property(property: 'supplier', type: 'string', example: 'PT Buah Segar'),
+                                            new OA\Property(property: 'jumlah_rekap', type: 'integer', example: 3),
+                                            new OA\Property(property: 'total_peti', type: 'integer', example: 60),
+                                            new OA\Property(property: 'total_sisa', type: 'number', example: 2500000),
+                                        ]
+                                    )
+                                ),
+                                new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object', description: 'Data rekap supplier')),
+                            ]
+                        ),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+        ]
+    )]
     public function rekapSupplier(Request $request)
     {
         $request->validate([
@@ -135,6 +286,29 @@ class LaporanController extends Controller
         ]);
     }
 
+    #[OA\Get(
+        path: '/laporan/rekap-supplier/export',
+        summary: 'Export laporan rekap supplier ke Excel',
+        description: 'Download file Excel laporan rekap supplier',
+        operationId: 'exportLaporanRekapSupplier',
+        tags: ['Laporan'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(name: 'tanggal_dari', in: 'query', description: 'Filter tanggal mulai (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', format: 'date')),
+            new OA\Parameter(name: 'tanggal_sampai', in: 'query', description: 'Filter tanggal akhir (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', format: 'date')),
+            new OA\Parameter(name: 'supplier_id', in: 'query', description: 'Filter supplier tertentu', schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'status', in: 'query', description: 'Filter status rekap', schema: new OA\Schema(type: 'string', enum: ['draft', 'final'])),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'File Excel berhasil diunduh',
+                content: new OA\MediaType(mediaType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', schema: new OA\Schema(type: 'string', format: 'binary'))
+            ),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+        ]
+    )]
     public function exportRekapSupplier(Request $request)
     {
         $request->validate([
@@ -159,6 +333,73 @@ class LaporanController extends Controller
 
     // ─── 3. Laporan Piutang ──────────────────────────────────────────────────
 
+    #[OA\Get(
+        path: '/laporan/piutang',
+        summary: 'Laporan piutang',
+        description: 'Ringkasan piutang aktif (tempo/cicil belum lunas) dengan analisis aging (0-30, 31-60, 61-90, >90 hari)',
+        operationId: 'getLaporanPiutang',
+        tags: ['Laporan'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(name: 'tanggal_dari', in: 'query', description: 'Filter tanggal transaksi mulai (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', format: 'date', example: '2026-01-01')),
+            new OA\Parameter(name: 'tanggal_sampai', in: 'query', description: 'Filter tanggal transaksi akhir (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', format: 'date', example: '2026-03-31')),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Success',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'success', type: 'boolean', example: true),
+                        new OA\Property(property: 'message', type: 'string', example: 'Success'),
+                        new OA\Property(
+                            property: 'data',
+                            type: 'object',
+                            properties: [
+                                new OA\Property(
+                                    property: 'summary',
+                                    type: 'object',
+                                    properties: [
+                                        new OA\Property(property: 'total_piutang', type: 'number', example: 15000000),
+                                        new OA\Property(property: 'jumlah_pelanggan', type: 'integer', example: 8),
+                                        new OA\Property(property: 'jumlah_transaksi', type: 'integer', example: 12),
+                                        new OA\Property(property: 'overdue', type: 'number', example: 3000000),
+                                        new OA\Property(
+                                            property: 'aging',
+                                            type: 'object',
+                                            properties: [
+                                                new OA\Property(property: '0-30', type: 'number', example: 8000000),
+                                                new OA\Property(property: '31-60', type: 'number', example: 4000000),
+                                                new OA\Property(property: '61-90', type: 'number', example: 2000000),
+                                                new OA\Property(property: '>90', type: 'number', example: 1000000),
+                                            ]
+                                        ),
+                                    ]
+                                ),
+                                new OA\Property(
+                                    property: 'data',
+                                    type: 'array',
+                                    items: new OA\Items(
+                                        allOf: [
+                                            new OA\Schema(ref: '#/components/schemas/Transaksi'),
+                                            new OA\Schema(
+                                                properties: [
+                                                    new OA\Property(property: 'umur_hari', type: 'integer', example: 15),
+                                                    new OA\Property(property: 'is_overdue', type: 'boolean', example: false),
+                                                ]
+                                            ),
+                                        ]
+                                    )
+                                ),
+                            ]
+                        ),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+        ]
+    )]
     public function piutang(Request $request)
     {
         $request->validate([
@@ -211,6 +452,27 @@ class LaporanController extends Controller
         ]);
     }
 
+    #[OA\Get(
+        path: '/laporan/piutang/export',
+        summary: 'Export laporan piutang ke Excel',
+        description: 'Download file Excel laporan piutang aktif',
+        operationId: 'exportLaporanPiutang',
+        tags: ['Laporan'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(name: 'tanggal_dari', in: 'query', description: 'Filter tanggal mulai (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', format: 'date')),
+            new OA\Parameter(name: 'tanggal_sampai', in: 'query', description: 'Filter tanggal akhir (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', format: 'date')),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'File Excel berhasil diunduh',
+                content: new OA\MediaType(mediaType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', schema: new OA\Schema(type: 'string', format: 'binary'))
+            ),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+        ]
+    )]
     public function exportPiutang(Request $request)
     {
         $request->validate([
@@ -228,6 +490,60 @@ class LaporanController extends Controller
 
     // ─── 4. Laporan Kas Laci ─────────────────────────────────────────────────
 
+    #[OA\Get(
+        path: '/laporan/kas-laci',
+        summary: 'Laporan kas laci',
+        description: 'Ringkasan kas laci: total masuk, total keluar, saldo periode, rincian per hari',
+        operationId: 'getLaporanKasLaci',
+        tags: ['Laporan'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(name: 'tanggal_dari', in: 'query', description: 'Filter tanggal mulai (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', format: 'date', example: '2026-01-01')),
+            new OA\Parameter(name: 'tanggal_sampai', in: 'query', description: 'Filter tanggal akhir (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', format: 'date', example: '2026-03-31')),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Success',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'success', type: 'boolean', example: true),
+                        new OA\Property(property: 'message', type: 'string', example: 'Success'),
+                        new OA\Property(
+                            property: 'data',
+                            type: 'object',
+                            properties: [
+                                new OA\Property(
+                                    property: 'summary',
+                                    type: 'object',
+                                    properties: [
+                                        new OA\Property(property: 'total_masuk', type: 'number', example: 30000000),
+                                        new OA\Property(property: 'total_keluar', type: 'number', example: 10000000),
+                                        new OA\Property(property: 'saldo_periode', type: 'number', example: 20000000),
+                                        new OA\Property(property: 'total_entri', type: 'integer', example: 45),
+                                    ]
+                                ),
+                                new OA\Property(
+                                    property: 'per_hari',
+                                    type: 'array',
+                                    items: new OA\Items(
+                                        properties: [
+                                            new OA\Property(property: 'tanggal', type: 'string', example: '2026-03-24'),
+                                            new OA\Property(property: 'total_masuk', type: 'number', example: 2000000),
+                                            new OA\Property(property: 'total_keluar', type: 'number', example: 500000),
+                                        ]
+                                    )
+                                ),
+                                new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object', description: 'Data kas laci')),
+                            ]
+                        ),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+        ]
+    )]
     public function kasLaci(Request $request)
     {
         $request->validate([
@@ -262,6 +578,27 @@ class LaporanController extends Controller
         ]);
     }
 
+    #[OA\Get(
+        path: '/laporan/kas-laci/export',
+        summary: 'Export laporan kas laci ke Excel',
+        description: 'Download file Excel laporan kas laci',
+        operationId: 'exportLaporanKasLaci',
+        tags: ['Laporan'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(name: 'tanggal_dari', in: 'query', description: 'Filter tanggal mulai (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', format: 'date')),
+            new OA\Parameter(name: 'tanggal_sampai', in: 'query', description: 'Filter tanggal akhir (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', format: 'date')),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'File Excel berhasil diunduh',
+                content: new OA\MediaType(mediaType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', schema: new OA\Schema(type: 'string', format: 'binary'))
+            ),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+        ]
+    )]
     public function exportKasLaci(Request $request)
     {
         $request->validate([
@@ -279,6 +616,51 @@ class LaporanController extends Controller
 
     // ─── 5. Laporan Stok Masuk ───────────────────────────────────────────────
 
+    #[OA\Get(
+        path: '/laporan/stok-masuk',
+        summary: 'Laporan stok masuk',
+        description: 'Ringkasan stok masuk dari barang datang: total pengiriman, produk, stok masuk, terjual, dan sisa',
+        operationId: 'getLaporanStokMasuk',
+        tags: ['Laporan'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(name: 'tanggal_dari', in: 'query', description: 'Filter tanggal mulai (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', format: 'date', example: '2026-01-01')),
+            new OA\Parameter(name: 'tanggal_sampai', in: 'query', description: 'Filter tanggal akhir (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', format: 'date', example: '2026-03-31')),
+            new OA\Parameter(name: 'supplier_id', in: 'query', description: 'Filter supplier tertentu', schema: new OA\Schema(type: 'integer', example: 1)),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Success',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'success', type: 'boolean', example: true),
+                        new OA\Property(property: 'message', type: 'string', example: 'Success'),
+                        new OA\Property(
+                            property: 'data',
+                            type: 'object',
+                            properties: [
+                                new OA\Property(
+                                    property: 'summary',
+                                    type: 'object',
+                                    properties: [
+                                        new OA\Property(property: 'total_bd', type: 'integer', example: 15, description: 'Total barang datang (pengiriman)'),
+                                        new OA\Property(property: 'total_produk', type: 'integer', example: 45, description: 'Total item produk'),
+                                        new OA\Property(property: 'total_stok_masuk', type: 'integer', example: 300, description: 'Total peti masuk'),
+                                        new OA\Property(property: 'total_terjual', type: 'integer', example: 250, description: 'Total peti terjual'),
+                                        new OA\Property(property: 'total_sisa', type: 'integer', example: 50, description: 'Total peti sisa'),
+                                    ]
+                                ),
+                                new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/BarangDatang')),
+                            ]
+                        ),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+        ]
+    )]
     public function stokMasuk(Request $request)
     {
         $request->validate([
@@ -310,6 +692,28 @@ class LaporanController extends Controller
         ]);
     }
 
+    #[OA\Get(
+        path: '/laporan/stok-masuk/export',
+        summary: 'Export laporan stok masuk ke Excel',
+        description: 'Download file Excel laporan stok masuk dari barang datang',
+        operationId: 'exportLaporanStokMasuk',
+        tags: ['Laporan'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(name: 'tanggal_dari', in: 'query', description: 'Filter tanggal mulai (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', format: 'date')),
+            new OA\Parameter(name: 'tanggal_sampai', in: 'query', description: 'Filter tanggal akhir (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', format: 'date')),
+            new OA\Parameter(name: 'supplier_id', in: 'query', description: 'Filter supplier tertentu', schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'File Excel berhasil diunduh',
+                content: new OA\MediaType(mediaType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', schema: new OA\Schema(type: 'string', format: 'binary'))
+            ),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+        ]
+    )]
     public function exportStokMasuk(Request $request)
     {
         $request->validate([
@@ -332,6 +736,63 @@ class LaporanController extends Controller
 
     // ─── 6. Laporan Pelanggan Terbaik ────────────────────────────────────────
 
+    #[OA\Get(
+        path: '/laporan/pelanggan-terbaik',
+        summary: 'Laporan pelanggan terbaik',
+        description: 'Ranking pelanggan berdasarkan total omset dalam periode tertentu',
+        operationId: 'getLaporanPelangganTerbaik',
+        tags: ['Laporan'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(name: 'tanggal_dari', in: 'query', description: 'Filter tanggal mulai (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', format: 'date', example: '2026-01-01')),
+            new OA\Parameter(name: 'tanggal_sampai', in: 'query', description: 'Filter tanggal akhir (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', format: 'date', example: '2026-03-31')),
+            new OA\Parameter(name: 'limit', in: 'query', description: 'Jumlah pelanggan yang ditampilkan (5-100, default: 20)', schema: new OA\Schema(type: 'integer', minimum: 5, maximum: 100, default: 20)),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Success',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'success', type: 'boolean', example: true),
+                        new OA\Property(property: 'message', type: 'string', example: 'Success'),
+                        new OA\Property(
+                            property: 'data',
+                            type: 'object',
+                            properties: [
+                                new OA\Property(
+                                    property: 'summary',
+                                    type: 'object',
+                                    properties: [
+                                        new OA\Property(property: 'total_pelanggan', type: 'integer', example: 20),
+                                        new OA\Property(property: 'total_omset', type: 'number', example: 150000000),
+                                        new OA\Property(property: 'top_pelanggan', type: 'string', example: 'Toko Buah Segar'),
+                                    ]
+                                ),
+                                new OA\Property(
+                                    property: 'data',
+                                    type: 'array',
+                                    items: new OA\Items(
+                                        properties: [
+                                            new OA\Property(property: 'ranking', type: 'integer', example: 1),
+                                            new OA\Property(property: 'nama_pelanggan', type: 'string', example: 'Toko Buah Segar'),
+                                            new OA\Property(property: 'total_transaksi', type: 'integer', example: 15),
+                                            new OA\Property(property: 'total_omset', type: 'number', example: 25000000),
+                                            new OA\Property(property: 'total_dibayar', type: 'number', example: 20000000),
+                                            new OA\Property(property: 'total_piutang', type: 'number', example: 5000000),
+                                            new OA\Property(property: 'transaksi_terakhir', type: 'string', format: 'date-time', example: '2026-03-25T10:00:00.000000Z'),
+                                        ]
+                                    )
+                                ),
+                            ]
+                        ),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+        ]
+    )]
     public function pelangganTerbaik(Request $request)
     {
         $request->validate([
@@ -372,6 +833,27 @@ class LaporanController extends Controller
         ]);
     }
 
+    #[OA\Get(
+        path: '/laporan/pelanggan-terbaik/export',
+        summary: 'Export laporan pelanggan terbaik ke Excel',
+        description: 'Download file Excel ranking pelanggan terbaik',
+        operationId: 'exportLaporanPelangganTerbaik',
+        tags: ['Laporan'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(name: 'tanggal_dari', in: 'query', description: 'Filter tanggal mulai (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', format: 'date')),
+            new OA\Parameter(name: 'tanggal_sampai', in: 'query', description: 'Filter tanggal akhir (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', format: 'date')),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'File Excel berhasil diunduh',
+                content: new OA\MediaType(mediaType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', schema: new OA\Schema(type: 'string', format: 'binary'))
+            ),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+        ]
+    )]
     public function exportPelangganTerbaik(Request $request)
     {
         $request->validate([

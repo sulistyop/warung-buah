@@ -135,6 +135,7 @@ class SettingController extends Controller
             'komisi_persen' => 'sometimes|required|numeric|min:0|max:100',
             'nama_toko'     => 'sometimes|required|string|max:255',
             'alamat_toko'   => 'nullable|string|max:500',
+            'telepon_toko'  => 'nullable|string|max:50',
         ]);
 
         if ($request->has('komisi_persen')) {
@@ -147,6 +148,10 @@ class SettingController extends Controller
 
         if ($request->has('alamat_toko')) {
             Setting::set('alamat_toko', $request->alamat_toko);
+        }
+
+        if ($request->has('telepon_toko')) {
+            Setting::set('telepon_toko', $request->telepon_toko);
         }
 
         return $this->success(null, 'Pengaturan berhasil disimpan');

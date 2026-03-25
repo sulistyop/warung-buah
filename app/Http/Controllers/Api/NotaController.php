@@ -38,9 +38,9 @@ class NotaController extends Controller
             'user',
         ])->findOrFail($id);
 
-        $namaUsaha  = Setting::get('nama_usaha', 'Warung Buah');
-        $alamatUsaha = Setting::get('alamat_usaha', '');
-        $teleponUsaha = Setting::get('telepon_usaha', '');
+        $namaUsaha   = Setting::get('nama_toko', 'Warung Buah');
+        $alamatUsaha = Setting::get('alamat_toko', '');
+        $teleponUsaha = Setting::get('telepon_toko', '');
 
         $data = [
             'usaha' => [
@@ -57,11 +57,13 @@ class NotaController extends Controller
                 'status_bayar'    => $transaksi->status_bayar,
             ],
             'items' => $transaksi->itemTransaksi->map(function ($item) {
+                $totalKotor = $item->detailPeti->sum('berat_kotor');
                 return [
                     'nama_supplier'     => $item->nama_supplier,
                     'jenis_buah'        => $item->jenis_buah,
                     'jumlah_peti'       => $item->jumlah_peti,
                     'total_berat_bersih'=> $item->total_berat_bersih,
+                    'total_kotor'       => $totalKotor,
                     'harga_per_kg'      => $item->harga_per_kg,
                     'subtotal'          => $item->subtotal,
                     'peti' => $item->detailPeti->map(fn($p) => [

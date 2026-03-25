@@ -29,6 +29,12 @@ class Kategori extends Model
         return 'KAT' . str_pad($number, 3, '0', STR_PAD_LEFT);
     }
 
+    // Produk (dari detail_barang_datang) yang terhubung ke kategori ini
+    public function detailBarangDatang(): HasMany
+    {
+        return $this->hasMany(DetailBarangDatang::class, 'kategori_id');
+    }
+
     // Scope aktif
     public function scopeAktif($query)
     {

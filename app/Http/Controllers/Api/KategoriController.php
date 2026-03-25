@@ -62,7 +62,7 @@ class KategoriController extends Controller
         }
 
         $perPage = $request->input('per_page', 20);
-        $kategori = $query->withCount('produk')->orderBy('nama_kategori')->paginate($perPage);
+        $kategori = $query->withCount('detailBarangDatang as produk_count')->orderBy('nama_kategori')->paginate($perPage);
 
         return $this->success($kategori);
     }
@@ -125,7 +125,7 @@ class KategoriController extends Controller
     )]
     public function show(int $id)
     {
-        $kategori = Kategori::withCount('produk')->find($id);
+        $kategori = Kategori::withCount('detailBarangDatang as produk_count')->find($id);
 
         if (!$kategori) {
             return $this->error('Kategori tidak ditemukan', 404);
@@ -319,7 +319,7 @@ class KategoriController extends Controller
             return $this->error('Kategori tidak ditemukan', 404);
         }
 
-        if ($kategori->produk()->count() > 0) {
+        if ($kategori->detailBarangDatang()->count() > 0) {
             return $this->error('Kategori tidak bisa dihapus karena masih ada produk terkait', 400);
         }
 

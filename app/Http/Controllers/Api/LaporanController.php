@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Exports\LaporanPenjualanExport;
+use App\Exports\LaporanPenjualanPerItemExport;
 use App\Exports\LaporanRekapSupplierExport;
 use App\Exports\LaporanPiutangExport;
 use App\Exports\LaporanKasLaciExport;
 use App\Exports\LaporanStokMasukExport;
 use App\Exports\LaporanPelangganTerbaikExport;
+use App\Models\ItemTransaksi;
 use App\Models\Transaksi;
 use App\Models\Rekap;
 use App\Models\KasLaci;
@@ -865,6 +867,77 @@ class LaporanController extends Controller
 
         return Excel::download(
             new LaporanPelangganTerbaikExport($request->tanggal_dari, $request->tanggal_sampai),
+            $filename
+        );
+    }
+
+    // ─── 7. Laporan Penjualan Per Item ───────────────────────────────────────
+
+    public function penjualanPerItem(Request $request)
+    {
+        $request->validate([
+            'tanggal_dari'   => 'nullable|date',
+            'tanggal_sampai' => 'nullable|date',
+            'jenis_buah'     => 'nullable|string',
+        ]);
+
+        $query = ItemTransaksi::with(['transaksi' => function ($q) {
+            $q->select('id', 'nama_pelanggan', 'created_at', 'status_bayar');
+        }])
+        ->orderBy('created_at');
+
+        // Filter tanggal dari created_at transaksi induk
+        if ($request->filled('tanggal_dari')) {
+            $query->whereHas('transaksi', fn($q) => $q->whereDate('created_at', '>=', $request->tanggal_dari));
+        }
+        if ($request->filled('tanggal_sampai')) {
+            $query->whereHas('transaksi', fn($q) => $q->whereDate('created_at', '<=', $request->tanggal_sampai));
+        }
+        if ($request->filled('jenis_buah')) {
+            $query->where('jenis_buah', 'like', '%' . $request->jenis_buah . '%');
+        }
+
+        $items = $query->get();
+
+        $data = $items->map(fn($item) => [
+            'tanggal'            => $item->transaksi?->created_at?->format('Y-m-d'),
+            'nama_pelanggan'     => $item->transaksi?->nama_pelanggan ?? '-',
+            'jenis_buah'         => $item->jenis_buah,
+            'jumlah_peti'        => $item->jumlah_peti,
+            'total_berat_bersih' => $item->total_berat_bersih,
+            'harga_per_kg'       => $item->harga_per_kg,
+            'subtotal'           => $item->subtotal,
+        ]);
+
+        $summary = [
+            'total_item'         => $data->count(),
+            'total_peti'         => $data->sum('jumlah_peti'),
+            'total_berat_bersih' => $data->sum('total_berat_bersih'),
+            'total_omset'        => $data->sum('subtotal'),
+        ];
+
+        return $this->success([
+            'summary' => $summary,
+            'data'    => $data->values(),
+        ]);
+    }
+
+    public function exportPenjualanPerItem(Request $request)
+    {
+        $request->validate([
+            'tanggal_dari'   => 'nullable|date',
+            'tanggal_sampai' => 'nullable|date',
+            'jenis_buah'     => 'nullable|string',
+        ]);
+
+        $filename = 'laporan-penjualan-per-item-' . now()->format('Ymd-His') . '.xlsx';
+
+        return Excel::download(
+            new LaporanPenjualanPerItemExport(
+                $request->tanggal_dari,
+                $request->tanggal_sampai,
+                $request->jenis_buah,
+            ),
             $filename
         );
     }

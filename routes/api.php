@@ -202,5 +202,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/pelanggan-terbaik', [LaporanController::class, 'pelangganTerbaik'])->middleware('permission:transaksi,read');
         Route::get('/pelanggan-terbaik/export', [LaporanController::class, 'exportPelangganTerbaik'])->middleware('permission:transaksi,read');
+
+        Route::get('/penjualan-per-item', [LaporanController::class, 'penjualanPerItem'])->middleware('permission:transaksi,read');
+        Route::get('/penjualan-per-item/export', [LaporanController::class, 'exportPenjualanPerItem'])->middleware('permission:transaksi,read');
     });
 });

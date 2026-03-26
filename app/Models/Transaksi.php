@@ -106,7 +106,10 @@ class Transaksi extends Model
         ]);
 
         if ($sisaTagihan <= 0 && $totalTagihan > 0) {
-            $this->update(['status_bayar' => 'lunas']);
+            // Preserve 'transfer' status — don't overwrite with 'lunas'
+            if ($this->status_bayar !== 'transfer') {
+                $this->update(['status_bayar' => 'lunas']);
+            }
         } elseif ($totalDibayar > 0 && $sisaTagihan > 0) {
             $this->update(['status_bayar' => 'cicil']);
         }
@@ -115,10 +118,11 @@ class Transaksi extends Model
     public function getStatusBayarLabelAttribute(): array
     {
         return match($this->status_bayar) {
-            'lunas' => ['label' => 'Lunas', 'color' => 'green'],
-            'tempo' => ['label' => 'Tempo', 'color' => 'yellow'],
-            'cicil' => ['label' => 'Cicil', 'color' => 'blue'],
-            default => ['label' => '-', 'color' => 'gray'],
+            'lunas'    => ['label' => 'Lunas', 'color' => 'green'],
+            'transfer' => ['label' => 'Transfer', 'color' => 'blue'],
+            'tempo'    => ['label' => 'Tempo', 'color' => 'yellow'],
+            'cicil'    => ['label' => 'Cicil', 'color' => 'orange'],
+            default    => ['label' => '-', 'color' => 'gray'],
         };
     }
 

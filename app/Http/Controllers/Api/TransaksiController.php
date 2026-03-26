@@ -269,7 +269,7 @@ class TransaksiController extends Controller
     {
         $request->validate([
             'nama_pelanggan'       => 'required|string|max:255',
-            'status_bayar'         => 'required|in:lunas,tempo,cicil',
+            'status_bayar'         => 'required|in:lunas,transfer,tempo,cicil',
             'tanggal_jatuh_tempo'  => 'nullable|date',
             'komisi_persen'        => 'required|numeric|min:0|max:100',
             'catatan'              => 'nullable|string',
@@ -376,7 +376,7 @@ class TransaksiController extends Controller
                 'kembalian' => $kembalian,
             ]);
 
-            // Jika status lunas dan ada uang diterima, catat sebagai pembayaran
+            // Jika status lunas dan ada uang diterima, catat sebagai pembayaran tunai + kas laci
             if ($request->status_bayar === 'lunas' && $uangDiterima > 0) {
                 Pembayaran::create([
                     'transaksi_id' => $transaksi->id,
@@ -389,6 +389,20 @@ class TransaksiController extends Controller
                 ]);
                 $transaksi->recalculate();
                 KasLaci::catatDariTransaksi($transaksi->fresh());
+            }
+
+            // Jika status transfer, catat sebagai pembayaran transfer (tidak masuk kas laci)
+            if ($request->status_bayar === 'transfer') {
+                Pembayaran::create([
+                    'transaksi_id' => $transaksi->id,
+                    'kode_pembayaran' => Pembayaran::generateKode(),
+                    'nominal' => $totalTagihan,
+                    'metode' => 'transfer',
+                    'catatan' => 'Pembayaran transfer saat transaksi',
+                    'sisa_tagihan' => 0,
+                    'user_id' => auth()->id(),
+                ]);
+                $transaksi->recalculate();
             }
 
             DB::commit();

@@ -881,10 +881,12 @@ class LaporanController extends Controller
             'jenis_buah'     => 'nullable|string',
         ]);
 
-        $query = ItemTransaksi::with(['transaksi' => function ($q) {
-            $q->select('id', 'nama_pelanggan', 'created_at', 'status_bayar');
-        }])
-        ->orderBy('created_at');
+        $query = ItemTransaksi::with([
+            'transaksi' => function ($q) {
+                $q->select('id', 'nama_pelanggan', 'created_at', 'status_bayar');
+            },
+            'detailBarangDatang:id,ukuran',
+        ])->orderBy('created_at');
 
         // Filter tanggal dari created_at transaksi induk
         if ($request->filled('tanggal_dari')) {
@@ -903,6 +905,7 @@ class LaporanController extends Controller
             'tanggal'            => $item->transaksi?->created_at?->format('Y-m-d'),
             'nama_pelanggan'     => $item->transaksi?->nama_pelanggan ?? '-',
             'jenis_buah'         => $item->jenis_buah,
+            'ukuran'             => $item->detailBarangDatang?->ukuran ?? '-',
             'jumlah_peti'        => $item->jumlah_peti,
             'total_berat_bersih' => $item->total_berat_bersih,
             'harga_per_kg'       => $item->harga_per_kg,

@@ -21,9 +21,12 @@ class LaporanPenjualanPerItemExport implements FromCollection, WithHeadings, Wit
 
     public function collection()
     {
-        $query = ItemTransaksi::with(['transaksi' => function ($q) {
-            $q->select('id', 'nama_pelanggan', 'created_at', 'status_bayar');
-        }])->orderBy('created_at');
+        $query = ItemTransaksi::with([
+            'transaksi' => function ($q) {
+                $q->select('id', 'nama_pelanggan', 'created_at', 'status_bayar');
+            },
+            'detailBarangDatang:id,ukuran',
+        ])->orderBy('created_at');
 
         if ($this->tanggalDari) {
             $query->whereHas('transaksi', fn($q) => $q->whereDate('created_at', '>=', $this->tanggalDari));
@@ -41,6 +44,7 @@ class LaporanPenjualanPerItemExport implements FromCollection, WithHeadings, Wit
                 'tanggal'            => $item->transaksi?->created_at?->format('d/m/Y') ?? '-',
                 'nama_pelanggan'     => $item->transaksi?->nama_pelanggan ?? '-',
                 'jenis_buah'         => $item->jenis_buah,
+                'ukuran'             => $item->detailBarangDatang?->ukuran ?? '-',
                 'jumlah_peti'        => $item->jumlah_peti,
                 'total_berat_bersih' => $item->total_berat_bersih,
                 'harga_per_kg'       => $item->harga_per_kg,
@@ -51,7 +55,7 @@ class LaporanPenjualanPerItemExport implements FromCollection, WithHeadings, Wit
 
     public function headings(): array
     {
-        return ['No', 'Tanggal', 'Nama Pelanggan', 'Jenis Buah', 'Peti', 'Netto (kg)', 'Harga/kg', 'Subtotal'];
+        return ['No', 'Tanggal', 'Nama Pelanggan', 'Jenis Buah', 'Leter', 'Peti', 'Netto (kg)', 'Harga/kg', 'Subtotal'];
     }
 
     public function title(): string

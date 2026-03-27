@@ -820,7 +820,15 @@ class LaporanController extends Controller
         $this->applyDateFilter($query, $request, 'created_at');
 
         $data = $query->get()->map(function ($row, $i) {
-            return array_merge($row->toArray(), ['ranking' => $i + 1]);
+            return [
+                'ranking'             => $i + 1,
+                'nama_pelanggan'      => $row->nama_pelanggan,
+                'total_transaksi'     => (int)   $row->total_transaksi,
+                'total_omset'         => (float) $row->total_omset,
+                'total_dibayar'       => (float) $row->total_dibayar,
+                'total_piutang'       => (float) $row->total_piutang,
+                'transaksi_terakhir'  => $row->transaksi_terakhir,
+            ];
         });
 
         $summary = [

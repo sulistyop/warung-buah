@@ -534,7 +534,7 @@ class TransaksiController extends Controller
         $request->validate([
             'komplain'                  => 'required|array',
             'komplain.*.nama_produk'    => 'required|string|max:255',
-            'komplain.*.jumlah_bs'      => 'required|integer|min:1',
+            'komplain.*.jumlah_bs'      => 'required|numeric|min:0.01',
             'komplain.*.harga_ganti'    => 'required|numeric|min:0',
             'komplain.*.keterangan'     => 'nullable|string',
         ]);

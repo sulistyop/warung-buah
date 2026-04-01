@@ -19,7 +19,7 @@ class KomplainTransaksi extends Model
     ];
 
     protected $casts = [
-        'jumlah_bs'   => 'integer',
+        'jumlah_bs'   => 'float',
         'harga_ganti' => 'float',
         'total'       => 'float',
     ];

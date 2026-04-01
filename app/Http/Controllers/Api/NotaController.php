@@ -122,13 +122,15 @@ class NotaController extends Controller
     {
         $rekap = Rekap::with(['supplier', 'details', 'komplain', 'dibuatOleh'])->findOrFail($id);
 
-        $namaUsaha   = Setting::get('nama_usaha', 'Warung Buah');
-        $alamatUsaha = Setting::get('alamat_usaha', '');
+        $namaUsaha    = Setting::get('nama_toko', 'Warung Buah');
+        $alamatUsaha  = Setting::get('alamat_toko', '');
+        $teleponUsaha = Setting::get('telepon_toko', '');
 
         $data = [
             'usaha' => [
-                'nama'   => $namaUsaha,
-                'alamat' => $alamatUsaha,
+                'nama'    => $namaUsaha,
+                'alamat'  => $alamatUsaha,
+                'telepon' => $teleponUsaha,
             ],
             'rekap' => [
                 'kode'        => $rekap->kode_rekap,
@@ -330,6 +332,7 @@ class NotaController extends Controller
   <div class='logo'>{$logoTag}</div>
   <h2>{$usaha['nama']}</h2>
   <p>{$usaha['alamat']}</p>
+  " . ($usaha['telepon'] ? "<p>{$usaha['telepon']}</p>" : '') . "
   <div class='divider'></div>
   <table style='border:none'>
     <tr><td style='border:none'><b>REKAP HARIAN SUPPLIER</b></td><td style='border:none;text-align:right'>{$rekap['kode']}</td></tr>

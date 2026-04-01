@@ -532,7 +532,7 @@ class TransaksiController extends Controller
         }
 
         $request->validate([
-            'komplain'                       => 'required|array',
+            'komplain'                       => 'present|array',
             'komplain.*.item_transaksi_id'   => 'required|exists:item_transaksi,id',
             'komplain.*.jumlah_bs'           => 'required|numeric|min:0.01',
             'komplain.*.keterangan'          => 'nullable|string',
@@ -540,10 +540,10 @@ class TransaksiController extends Controller
 
         DB::beginTransaction();
         try {
-            // Hapus komplain lama lalu simpan yang baru
+            // Hapus semua komplain lama (termasuk kasus hapus semua)
             $transaksi->komplainTransaksi()->delete();
 
-            foreach ($request->komplain as $k) {
+            foreach ($request->komplain ?? [] as $k) {
                 $item = $transaksi->itemTransaksi->firstWhere('id', $k['item_transaksi_id']);
                 KomplainTransaksi::create([
                     'transaksi_id'      => $transaksi->id,

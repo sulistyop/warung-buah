@@ -526,17 +526,16 @@ class TransaksiController extends Controller
      */
     public function saveKomplain(Request $request, int $id)
     {
-        $transaksi = Transaksi::find($id);
+        $transaksi = Transaksi::with('itemTransaksi')->find($id);
         if (!$transaksi) {
             return $this->error('Transaksi tidak ditemukan', 404);
         }
 
         $request->validate([
-            'komplain'                  => 'required|array',
-            'komplain.*.nama_produk'    => 'required|string|max:255',
-            'komplain.*.jumlah_bs'      => 'required|numeric|min:0.01',
-            'komplain.*.harga_ganti'    => 'required|numeric|min:0',
-            'komplain.*.keterangan'     => 'nullable|string',
+            'komplain'                       => 'required|array',
+            'komplain.*.item_transaksi_id'   => 'required|exists:item_transaksi,id',
+            'komplain.*.jumlah_bs'           => 'required|numeric|min:0.01',
+            'komplain.*.keterangan'          => 'nullable|string',
         ]);
 
         DB::beginTransaction();
@@ -545,15 +544,15 @@ class TransaksiController extends Controller
             $transaksi->komplainTransaksi()->delete();
 
             foreach ($request->komplain as $k) {
-                $jumlah = $k['jumlah_bs'];
-                $harga  = $k['harga_ganti'];
+                $item = $transaksi->itemTransaksi->firstWhere('id', $k['item_transaksi_id']);
                 KomplainTransaksi::create([
-                    'transaksi_id' => $transaksi->id,
-                    'nama_produk'  => $k['nama_produk'],
-                    'jumlah_bs'    => $jumlah,
-                    'harga_ganti'  => $harga,
-                    'total'        => $jumlah * $harga,
-                    'keterangan'   => $k['keterangan'] ?? null,
+                    'transaksi_id'      => $transaksi->id,
+                    'item_transaksi_id' => $k['item_transaksi_id'],
+                    'nama_produk'       => $item?->jenis_buah ?? '',
+                    'jumlah_bs'         => $k['jumlah_bs'],
+                    'harga_ganti'       => 0,
+                    'total'             => 0,
+                    'keterangan'        => $k['keterangan'] ?? null,
                 ]);
             }
 

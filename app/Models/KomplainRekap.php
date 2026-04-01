@@ -11,6 +11,7 @@ class KomplainRekap extends Model
 
     protected $fillable = [
         'rekap_id',
+        'detail_rekap_id',
         'nama_produk',
         'jumlah_bs',
         'harga_ganti',
@@ -19,13 +20,19 @@ class KomplainRekap extends Model
     ];
 
     protected $casts = [
-        'jumlah_bs'   => 'integer',
-        'harga_ganti' => 'float',
-        'total'       => 'float',
+        'detail_rekap_id' => 'integer',
+        'jumlah_bs'       => 'float',
+        'harga_ganti'     => 'float',
+        'total'           => 'float',
     ];
 
     public function rekap(): BelongsTo
     {
         return $this->belongsTo(Rekap::class, 'rekap_id');
+    }
+
+    public function detailRekap(): BelongsTo
+    {
+        return $this->belongsTo(DetailRekap::class);
     }
 }

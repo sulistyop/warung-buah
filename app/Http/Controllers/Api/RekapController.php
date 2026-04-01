@@ -226,10 +226,10 @@ class RekapController extends Controller
                         $beratKemasan += $peti->berat_kemasan;
                     }
 
-                    // Kurangi berat bersih dengan kg busuk yang dikomplain pada transaksi ini
+                    // Kurangi berat bersih dengan kg busuk via FK item_transaksi_id
                     $totalBusuk = $item->transaksi
                         ? $item->transaksi->komplainTransaksi
-                            ->where('nama_produk', $item->jenis_buah)
+                            ->where('item_transaksi_id', $item->id)
                             ->sum('jumlah_bs')
                         : 0;
 
@@ -447,17 +447,21 @@ class RekapController extends Controller
                 }
             }
 
-            // Simpan komplain
+            // Simpan komplain — resolve detail_rekap_id dari nama_produk
             if (!empty($validated['komplain'])) {
+                $detailMap = DetailRekap::where('rekap_id', $rekap->id)
+                    ->get(['id', 'nama_produk'])
+                    ->keyBy('nama_produk');
+
                 foreach ($validated['komplain'] as $k) {
-                    $total = $k['jumlah_bs'] * $k['harga_ganti'];
                     KomplainRekap::create([
-                        'rekap_id'    => $rekap->id,
-                        'nama_produk' => $k['nama_produk'],
-                        'jumlah_bs'   => $k['jumlah_bs'],
-                        'harga_ganti' => $k['harga_ganti'],
-                        'total'       => $total,
-                        'keterangan'  => $k['keterangan'] ?? null,
+                        'rekap_id'        => $rekap->id,
+                        'detail_rekap_id' => $detailMap[$k['nama_produk']]?->id ?? null,
+                        'nama_produk'     => $k['nama_produk'],
+                        'jumlah_bs'       => $k['jumlah_bs'],
+                        'harga_ganti'     => $k['harga_ganti'] ?? 0,
+                        'total'           => $k['jumlah_bs'] * ($k['harga_ganti'] ?? 0),
+                        'keterangan'      => $k['keterangan'] ?? null,
                     ]);
                 }
             }
@@ -562,14 +566,20 @@ class RekapController extends Controller
 
             if (isset($validated['komplain'])) {
                 $rekap->komplain()->delete();
+
+                $detailMap = DetailRekap::where('rekap_id', $rekap->id)
+                    ->get(['id', 'nama_produk'])
+                    ->keyBy('nama_produk');
+
                 foreach ($validated['komplain'] as $k) {
                     KomplainRekap::create([
-                        'rekap_id'    => $rekap->id,
-                        'nama_produk' => $k['nama_produk'],
-                        'jumlah_bs'   => $k['jumlah_bs'],
-                        'harga_ganti' => $k['harga_ganti'],
-                        'total'       => $k['jumlah_bs'] * $k['harga_ganti'],
-                        'keterangan'  => $k['keterangan'] ?? null,
+                        'rekap_id'        => $rekap->id,
+                        'detail_rekap_id' => $detailMap[$k['nama_produk']]?->id ?? null,
+                        'nama_produk'     => $k['nama_produk'],
+                        'jumlah_bs'       => $k['jumlah_bs'],
+                        'harga_ganti'     => $k['harga_ganti'] ?? 0,
+                        'total'           => $k['jumlah_bs'] * ($k['harga_ganti'] ?? 0),
+                        'keterangan'      => $k['keterangan'] ?? null,
                     ]);
                 }
             }

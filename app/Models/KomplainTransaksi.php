@@ -11,6 +11,7 @@ class KomplainTransaksi extends Model
 
     protected $fillable = [
         'transaksi_id',
+        'item_transaksi_id',
         'nama_produk',
         'jumlah_bs',
         'harga_ganti',
@@ -19,13 +20,19 @@ class KomplainTransaksi extends Model
     ];
 
     protected $casts = [
-        'jumlah_bs'   => 'float',
-        'harga_ganti' => 'float',
-        'total'       => 'float',
+        'item_transaksi_id' => 'integer',
+        'jumlah_bs'         => 'float',
+        'harga_ganti'       => 'float',
+        'total'             => 'float',
     ];
 
     public function transaksi(): BelongsTo
     {
         return $this->belongsTo(Transaksi::class);
+    }
+
+    public function itemTransaksi(): BelongsTo
+    {
+        return $this->belongsTo(ItemTransaksi::class);
     }
 }

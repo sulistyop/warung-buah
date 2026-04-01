@@ -93,12 +93,10 @@ class Transaksi extends Model
     {
         $totalKotor = $this->itemTransaksi()->sum('subtotal');
 
-        // Kurangi total kotor dengan nilai busuk: jumlah_bs × harga_per_kg item yg sesuai
-        $items = $this->itemTransaksi()->get(['id', 'jenis_buah', 'harga_per_kg']);
-        $hargaMap = $items->keyBy('jenis_buah')->map(fn($i) => (float) $i->harga_per_kg);
-        foreach ($this->komplainTransaksi()->get(['nama_produk', 'jumlah_bs']) as $k) {
-            if (isset($hargaMap[$k->nama_produk])) {
-                $totalKotor -= (float) $k->jumlah_bs * $hargaMap[$k->nama_produk];
+        // Kurangi total kotor dengan nilai busuk via FK item_transaksi_id
+        foreach ($this->komplainTransaksi()->with('itemTransaksi')->get() as $k) {
+            if ($k->itemTransaksi) {
+                $totalKotor -= (float) $k->jumlah_bs * (float) $k->itemTransaksi->harga_per_kg;
             }
         }
         $totalKotor = max(0, $totalKotor);

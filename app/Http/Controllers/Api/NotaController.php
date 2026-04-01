@@ -286,18 +286,43 @@ class NotaController extends Controller
 
         $detailsHtml = '';
         $currentProduk = '';
-        foreach ($details as $d) {
-            if ($d['nama_produk'] !== $currentProduk) {
+        $groupSubtotal = 0;
+        $groupPeti = 0;
+        $details = collect($details)->values()->all();
+        foreach ($details as $i => $d) {
+            $isNewProduk = $d['nama_produk'] !== $currentProduk;
+            $nextProduk = isset($details[$i + 1]) ? $details[$i + 1]['nama_produk'] : null;
+            $isLastInGroup = $nextProduk !== $d['nama_produk'];
+
+            if ($isNewProduk) {
+                if ($currentProduk !== '') {
+                    // Close previous group with subtotal
+                    $detailsHtml .= "<tr style='background:#f9f9f9'><td colspan='4' style='font-weight:bold;font-size:11px'>Total {$currentProduk}</td><td colspan='2' style='text-align:right;font-weight:bold'>{$fmt($groupSubtotal)}</td></tr>";
+                }
                 $currentProduk = $d['nama_produk'];
-                $detailsHtml .= "<tr><td colspan='5'><b>{$d['nama_produk']}" . ($d['ukuran'] ? " ({$d['ukuran']})" : '') . "</b></td></tr>";
+                $groupSubtotal = 0;
+                $groupPeti = 0;
+                $detailsHtml .= "<tr><td colspan='6'><b>{$d['nama_produk']}" . ($d['ukuran'] ? " ({$d['ukuran']})" : '') . "</b></td></tr>";
             }
+
+            $groupSubtotal += $d['subtotal'];
+            $groupPeti += $d['jumlah_peti'];
+
             $detailsHtml .= "<tr>
                 <td>{$d['jumlah_peti']} peti</td>
                 <td style='text-align:right'>{$d['total_berat_kotor']}</td>
                 <td style='text-align:right'>{$d['total_berat_peti']}</td>
                 <td style='text-align:right'>{$d['total_berat_bersih']}</td>
+                <td style='text-align:right'>" . number_format($d['harga_per_kg'], 0, ',', '.') . "</td>
                 <td style='text-align:right'>{$fmt($d['subtotal'])}</td>
             </tr>";
+
+            if ($isLastInGroup) {
+                $detailsHtml .= "<tr style='background:#f9f9f9'><td colspan='4' style='font-weight:bold;font-size:11px'>Total {$currentProduk}</td><td colspan='2' style='text-align:right;font-weight:bold'>{$fmt($groupSubtotal)}</td></tr>";
+                $currentProduk = ''; // reset so next iteration triggers new group header
+                $groupSubtotal = 0;
+                $groupPeti = 0;
+            }
         }
 
         $komplainHtml = '';
@@ -343,10 +368,10 @@ class NotaController extends Controller
   <div class='divider'></div>
   <h3>Detail Produk</h3>
   <table>
-    <thead><tr><th>Peti</th><th>B.Kotor</th><th>B.Peti</th><th>B.Bersih</th><th>Jumlah</th></tr></thead>
+    <thead><tr><th>Peti</th><th>B.Kotor</th><th>B.Peti</th><th>B.Bersih</th><th style='text-align:right'>Harga/kg</th><th style='text-align:right'>Jumlah</th></tr></thead>
     <tbody>{$detailsHtml}</tbody>
     <tfoot>
-      <tr class='total-row'><td>Total: {$summary['total_peti']} peti</td><td colspan='3'></td><td style='text-align:right'>{$fmt($summary['total_kotor'])}</td></tr>
+      <tr class='total-row'><td>Total: {$summary['total_peti']} peti</td><td colspan='4'></td><td style='text-align:right'>{$fmt($summary['total_kotor'])}</td></tr>
     </tfoot>
   </table>" .
   (!empty($komplain) ? "

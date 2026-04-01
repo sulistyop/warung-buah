@@ -324,6 +324,7 @@ class RekapController extends Controller
         $validated = $request->validate([
             'supplier_id'        => 'required|exists:supplier,id',
             'tanggal'            => 'required|date',
+            'total_kuli'         => 'nullable|numeric|min:0',
             'total_ongkos'       => 'nullable|numeric|min:0',
             'keterangan_ongkos'  => 'nullable|string',
             'details'            => 'nullable|array',
@@ -379,15 +380,15 @@ class RekapController extends Controller
         }
 
         return DB::transaction(function () use ($validated, $barangDatangList, $request) {
-            $supplier    = \App\Models\Supplier::find($validated['supplier_id']);
-            $kuliPerPeti = (float) Setting::get('kuli_per_peti', 2000);
+            $supplier = \App\Models\Supplier::find($validated['supplier_id']);
 
             $rekap = Rekap::create([
                 'kode_rekap'        => Rekap::generateKode($validated['tanggal']),
                 'supplier_id'       => $validated['supplier_id'],
                 'tanggal'           => $validated['tanggal'],
                 'komisi_persen'     => $supplier->komisi_persen,
-                'kuli_per_peti'     => $kuliPerPeti,
+                'kuli_per_peti'     => 0,
+                'total_kuli'        => $validated['total_kuli'] ?? 0,
                 'total_ongkos'      => $validated['total_ongkos'] ?? 0,
                 'keterangan_ongkos' => $validated['keterangan_ongkos'] ?? null,
                 'status'            => 'draft',
@@ -522,6 +523,7 @@ class RekapController extends Controller
         }
 
         $validated = $request->validate([
+            'total_kuli'         => 'nullable|numeric|min:0',
             'total_ongkos'       => 'nullable|numeric|min:0',
             'keterangan_ongkos'  => 'nullable|string',
             'details'            => 'nullable|array',
@@ -543,6 +545,7 @@ class RekapController extends Controller
 
         return DB::transaction(function () use ($rekap, $validated) {
             $rekap->update([
+                'total_kuli'        => $validated['total_kuli'] ?? $rekap->total_kuli,
                 'total_ongkos'      => $validated['total_ongkos'] ?? $rekap->total_ongkos,
                 'keterangan_ongkos' => $validated['keterangan_ongkos'] ?? $rekap->keterangan_ongkos,
             ]);

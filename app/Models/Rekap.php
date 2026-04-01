@@ -86,7 +86,7 @@ class Rekap extends Model
         $totalPeti        = $details->sum('jumlah_peti');
         $totalKotor       = $details->sum('subtotal');
         $totalKomisi      = $totalKotor * ($this->komisi_persen / 100);
-        $totalKuli        = $totalPeti * $this->kuli_per_peti;
+        $totalKuli        = $this->total_kuli; // manual input, tidak dihitung per-peti
         $totalBusuk       = $this->komplain->sum('total');
         $pendapatanBersih = $totalKotor + $totalKomisi + $totalKuli + $this->total_ongkos;
         $sisa             = $pendapatanBersih - $totalBusuk;
@@ -95,7 +95,6 @@ class Rekap extends Model
             'total_peti'        => $totalPeti,
             'total_kotor'       => $totalKotor,
             'total_komisi'      => $totalKomisi,
-            'total_kuli'        => $totalKuli,
             'total_busuk'       => $totalBusuk,
             'pendapatan_bersih' => $pendapatanBersih,
             'sisa'              => $sisa,

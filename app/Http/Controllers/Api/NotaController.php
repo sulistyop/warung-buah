@@ -357,7 +357,7 @@ class NotaController extends Controller
     <table style='border:none'>
       <tr><td style='border:none'>Total</td><td style='border:none;text-align:right'>{$fmt($summary['total_kotor'])}</td></tr>
       <tr><td style='border:none'>Komisi ({$summary['komisi_persen']}%)</td><td style='border:none;text-align:right'>{$fmt($summary['total_komisi'])}</td></tr>
-      <tr><td style='border:none'>Kuli ({$summary['kuli_per_peti']}/peti × {$summary['total_peti']})</td><td style='border:none;text-align:right'>{$fmt($summary['total_kuli'])}</td></tr>
+      <tr><td style='border:none'>Kuli</td><td style='border:none;text-align:right'>{$fmt($summary['total_kuli'])}</td></tr>
       <tr><td style='border:none'>Ongkos" . ($summary['keterangan_ongkos'] ? " ({$summary['keterangan_ongkos']})" : '') . "</td><td style='border:none;text-align:right'>{$fmt($summary['total_ongkos'])}</td></tr>
       <tr class='total-row'><td style='border:none'>Pendapatan Bersih</td><td style='border:none;text-align:right'>{$fmt($summary['pendapatan_bersih'])}</td></tr>
       <tr><td style='border:none'>Busuk / Komplain</td><td style='border:none;text-align:right'>- {$fmt($summary['total_busuk'])}</td></tr>

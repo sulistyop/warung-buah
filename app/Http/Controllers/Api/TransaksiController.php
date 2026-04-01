@@ -6,6 +6,7 @@ use App\Models\Transaksi;
 use App\Models\ItemTransaksi;
 use App\Models\DetailPeti;
 use App\Models\BiayaOperasional;
+use App\Models\KomplainTransaksi;
 use App\Models\KasLaci;
 use App\Models\Pembayaran;
 use App\Models\Setting;
@@ -123,6 +124,7 @@ class TransaksiController extends Controller
             'itemTransaksi.detailPeti',
             'biayaOperasional',
             'pembayaran.user',
+            'komplainTransaksi',
             'user',
         ])->find($id);
 
@@ -506,6 +508,7 @@ class TransaksiController extends Controller
                 'itemTransaksi.detailPeti',
                 'biayaOperasional',
                 'pembayaran.user',
+                'komplainTransaksi',
                 'user',
             ]);
 
@@ -514,6 +517,61 @@ class TransaksiController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return $this->error('Gagal memperbarui: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Simpan komplain / busuk untuk transaksi
+     * Mengganti seluruh data komplain yang ada
+     */
+    public function saveKomplain(Request $request, int $id)
+    {
+        $transaksi = Transaksi::find($id);
+        if (!$transaksi) {
+            return $this->error('Transaksi tidak ditemukan', 404);
+        }
+
+        $request->validate([
+            'komplain'                  => 'required|array',
+            'komplain.*.nama_produk'    => 'required|string|max:255',
+            'komplain.*.jumlah_bs'      => 'required|integer|min:1',
+            'komplain.*.harga_ganti'    => 'required|numeric|min:0',
+            'komplain.*.keterangan'     => 'nullable|string',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            // Hapus komplain lama lalu simpan yang baru
+            $transaksi->komplainTransaksi()->delete();
+
+            foreach ($request->komplain as $k) {
+                $jumlah = $k['jumlah_bs'];
+                $harga  = $k['harga_ganti'];
+                KomplainTransaksi::create([
+                    'transaksi_id' => $transaksi->id,
+                    'nama_produk'  => $k['nama_produk'],
+                    'jumlah_bs'    => $jumlah,
+                    'harga_ganti'  => $harga,
+                    'total'        => $jumlah * $harga,
+                    'keterangan'   => $k['keterangan'] ?? null,
+                ]);
+            }
+
+            DB::commit();
+
+            $transaksi->load([
+                'itemTransaksi.detailPeti',
+                'biayaOperasional',
+                'pembayaran.user',
+                'komplainTransaksi',
+                'user',
+            ]);
+
+            return $this->success($transaksi, 'Komplain berhasil disimpan');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return $this->error('Gagal menyimpan komplain: ' . $e->getMessage(), 500);
         }
     }
 

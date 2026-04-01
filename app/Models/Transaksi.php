@@ -60,6 +60,11 @@ class Transaksi extends Model
         return $this->hasMany(Pembayaran::class, 'transaksi_id');
     }
 
+    public function komplainTransaksi(): HasMany
+    {
+        return $this->hasMany(KomplainTransaksi::class, 'transaksi_id');
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

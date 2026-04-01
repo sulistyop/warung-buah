@@ -87,6 +87,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/', [TransaksiController::class, 'store'])->middleware('permission:transaksi,create');
         Route::get('/{id}', [TransaksiController::class, 'show'])->middleware('permission:transaksi,read');
         Route::put('/{id}', [TransaksiController::class, 'update'])->middleware('permission:transaksi,update');
+        Route::post('/{id}/komplain', [TransaksiController::class, 'saveKomplain'])->middleware('permission:transaksi,update');
         Route::delete('/{id}', [TransaksiController::class, 'destroy'])->middleware('permission:transaksi,delete');
     });
 

@@ -557,6 +557,8 @@ class TransaksiController extends Controller
                 ]);
             }
 
+            $transaksi->recalculate();
+
             DB::commit();
 
             $transaksi->load([

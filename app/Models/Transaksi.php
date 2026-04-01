@@ -92,6 +92,17 @@ class Transaksi extends Model
     public function recalculate(): void
     {
         $totalKotor = $this->itemTransaksi()->sum('subtotal');
+
+        // Kurangi total kotor dengan nilai busuk: jumlah_bs × harga_per_kg item yg sesuai
+        $items = $this->itemTransaksi()->get(['id', 'jenis_buah', 'harga_per_kg']);
+        $hargaMap = $items->keyBy('jenis_buah')->map(fn($i) => (float) $i->harga_per_kg);
+        foreach ($this->komplainTransaksi()->get(['nama_produk', 'jumlah_bs']) as $k) {
+            if (isset($hargaMap[$k->nama_produk])) {
+                $totalKotor -= (float) $k->jumlah_bs * $hargaMap[$k->nama_produk];
+            }
+        }
+        $totalKotor = max(0, $totalKotor);
+
         $totalBiaya = $this->biayaOperasional()->sum('nominal');
         $totalKomisi = $totalKotor * ($this->komisi_persen / 100);
         $totalBersih = $totalKotor + $totalBiaya;

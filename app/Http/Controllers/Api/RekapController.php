@@ -206,7 +206,7 @@ class RekapController extends Controller
         $barangDatangList = BarangDatang::where('supplier_id', $supplierId)
             ->where('tanggal', $tanggal)
             ->where('status', 'confirmed')
-            ->with(['details.itemTransaksi.detailPeti'])
+            ->with(['details.itemTransaksi.detailPeti', 'details.itemTransaksi.transaksi.komplainTransaksi'])
             ->get();
 
         if ($barangDatangList->isEmpty()) {
@@ -226,7 +226,14 @@ class RekapController extends Controller
                         $beratKemasan += $peti->berat_kemasan;
                     }
 
-                    $beratBersih = round((float) $item->total_berat_bersih, 3);
+                    // Kurangi berat bersih dengan kg busuk yang dikomplain pada transaksi ini
+                    $totalBusuk = $item->transaksi
+                        ? $item->transaksi->komplainTransaksi
+                            ->where('nama_produk', $item->jenis_buah)
+                            ->sum('jumlah_bs')
+                        : 0;
+
+                    $beratBersih = round(max(0, (float) $item->total_berat_bersih - $totalBusuk), 3);
                     $harga       = (float) ($item->harga_per_kg ?: $detail->harga_beli);
                     $subtotal    = round($beratBersih * $harga, 2);
 

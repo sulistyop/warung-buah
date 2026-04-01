@@ -424,6 +424,100 @@ class TransaksiController extends Controller
     }
 
     /**
+     * Update transaksi
+     */
+    public function update(Request $request, int $id)
+    {
+        $transaksi = Transaksi::find($id);
+        if (!$transaksi) {
+            return $this->error('Transaksi tidak ditemukan', 404);
+        }
+
+        $request->validate([
+            'nama_pelanggan'              => 'required|string|max:255',
+            'status_bayar'                => 'required|in:lunas,transfer,tempo,cicil',
+            'tanggal_jatuh_tempo'         => 'nullable|date',
+            'komisi_persen'               => 'required|numeric|min:0|max:100',
+            'catatan'                     => 'nullable|string',
+            'items'                       => 'nullable|array',
+            'items.*.id'                  => 'required|integer|exists:item_transaksi,id',
+            'items.*.harga_per_kg'        => 'required|numeric|min:0',
+            'items.*.peti'                => 'nullable|array',
+            'items.*.peti.*.id'           => 'required|integer|exists:detail_peti,id',
+            'items.*.peti.*.berat_kotor'  => 'required|numeric|min:0',
+            'items.*.peti.*.berat_kemasan'=> 'required|numeric|min:0',
+            'biaya'                       => 'nullable|array',
+            'biaya.*.nama_biaya'          => 'required_with:biaya|string',
+            'biaya.*.nominal'             => 'required_with:biaya|numeric|min:0',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            // Update header transaksi
+            $transaksi->update([
+                'nama_pelanggan'       => $request->nama_pelanggan,
+                'status_bayar'         => $request->status_bayar,
+                'tanggal_jatuh_tempo'  => $request->tanggal_jatuh_tempo,
+                'komisi_persen'        => $request->komisi_persen,
+                'catatan'              => $request->catatan,
+            ]);
+
+            // Update item harga + berat peti
+            foreach ($request->items ?? [] as $itemData) {
+                $item = ItemTransaksi::find($itemData['id']);
+                if (!$item || $item->transaksi_id !== $transaksi->id) {
+                    continue;
+                }
+
+                $item->update(['harga_per_kg' => $itemData['harga_per_kg']]);
+
+                foreach ($itemData['peti'] ?? [] as $petiData) {
+                    $peti = DetailPeti::find($petiData['id']);
+                    if (!$peti || $peti->item_transaksi_id !== $item->id) {
+                        continue;
+                    }
+                    $peti->update([
+                        'berat_kotor'   => $petiData['berat_kotor'],
+                        'berat_kemasan' => $petiData['berat_kemasan'],
+                        // berat_bersih adalah generated column, otomatis dihitung DB
+                    ]);
+                }
+
+                $item->recalculate();
+            }
+
+            // Ganti seluruh biaya operasional
+            $transaksi->biayaOperasional()->delete();
+            foreach ($request->biaya ?? [] as $biaya) {
+                if (!empty($biaya['nama_biaya']) && isset($biaya['nominal'])) {
+                    BiayaOperasional::create([
+                        'transaksi_id' => $transaksi->id,
+                        'nama_biaya'   => $biaya['nama_biaya'],
+                        'nominal'      => $biaya['nominal'],
+                    ]);
+                }
+            }
+
+            $transaksi->recalculate();
+
+            DB::commit();
+
+            $transaksi->load([
+                'itemTransaksi.detailPeti',
+                'biayaOperasional',
+                'pembayaran.user',
+                'user',
+            ]);
+
+            return $this->success($transaksi, 'Transaksi berhasil diperbarui');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return $this->error('Gagal memperbarui: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
      * Delete transaksi
      */
     #[OA\Delete(

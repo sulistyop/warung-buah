@@ -86,6 +86,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/statistics', [TransaksiController::class, 'statistics'])->middleware('permission:transaksi,read');
         Route::post('/', [TransaksiController::class, 'store'])->middleware('permission:transaksi,create');
         Route::get('/{id}', [TransaksiController::class, 'show'])->middleware('permission:transaksi,read');
+        Route::put('/{id}', [TransaksiController::class, 'update'])->middleware('permission:transaksi,update');
         Route::delete('/{id}', [TransaksiController::class, 'destroy'])->middleware('permission:transaksi,delete');
     });
 

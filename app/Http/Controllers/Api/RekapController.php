@@ -7,6 +7,7 @@ use App\Models\DetailBarangDatang;
 use App\Models\Rekap;
 use App\Models\DetailRekap;
 use App\Models\KomplainRekap;
+use App\Models\PengurangRekap;
 use App\Models\LogAktivitas;
 use App\Models\Setting;
 use Illuminate\Http\Request;
@@ -340,6 +341,9 @@ class RekapController extends Controller
             'komplain.*.jumlah_bs'         => 'required_with:komplain|integer|min:1',
             'komplain.*.harga_ganti'       => 'required_with:komplain|numeric|min:0',
             'komplain.*.keterangan'        => 'nullable|string',
+            'pengurang'                    => 'nullable|array',
+            'pengurang.*.nama'             => 'required_with:pengurang|string',
+            'pengurang.*.jumlah'           => 'required_with:pengurang|numeric|min:0',
         ]);
 
         // Cek apakah rekap untuk supplier+tanggal ini sudah ada
@@ -467,8 +471,19 @@ class RekapController extends Controller
                 }
             }
 
+            // Simpan pengurang opsional (biaya peti, dll)
+            if (!empty($validated['pengurang'])) {
+                foreach ($validated['pengurang'] as $p) {
+                    PengurangRekap::create([
+                        'rekap_id' => $rekap->id,
+                        'nama'     => $p['nama'],
+                        'jumlah'   => $p['jumlah'],
+                    ]);
+                }
+            }
+
             $rekap->recalculate();
-            $rekap->load(['supplier', 'details', 'komplain', 'dibuatOleh']);
+            $rekap->load(['supplier', 'details', 'komplain', 'pengurang', 'dibuatOleh']);
 
             LogAktivitas::catat('rekap', 'create', "Rekap {$rekap->kode_rekap} dibuat", $rekap);
 
@@ -489,7 +504,7 @@ class RekapController extends Controller
     )]
     public function show(int $id)
     {
-        $rekap = Rekap::with(['supplier', 'details', 'komplain', 'dibuatOleh'])->findOrFail($id);
+        $rekap = Rekap::with(['supplier', 'details', 'komplain', 'pengurang', 'dibuatOleh'])->findOrFail($id);
         return $this->success($rekap);
     }
 
@@ -541,6 +556,9 @@ class RekapController extends Controller
             'komplain.*.jumlah_bs'         => 'required_with:komplain|integer|min:1',
             'komplain.*.harga_ganti'       => 'required_with:komplain|numeric|min:0',
             'komplain.*.keterangan'        => 'nullable|string',
+            'pengurang'                    => 'nullable|array',
+            'pengurang.*.nama'             => 'required_with:pengurang|string',
+            'pengurang.*.jumlah'           => 'required_with:pengurang|numeric|min:0',
         ]);
 
         return DB::transaction(function () use ($rekap, $validated) {
@@ -587,8 +605,19 @@ class RekapController extends Controller
                 }
             }
 
+            if (isset($validated['pengurang'])) {
+                $rekap->pengurang()->delete();
+                foreach ($validated['pengurang'] as $p) {
+                    PengurangRekap::create([
+                        'rekap_id' => $rekap->id,
+                        'nama'     => $p['nama'],
+                        'jumlah'   => $p['jumlah'],
+                    ]);
+                }
+            }
+
             $rekap->recalculate();
-            $rekap->load(['supplier', 'details', 'komplain']);
+            $rekap->load(['supplier', 'details', 'komplain', 'pengurang']);
 
             LogAktivitas::catat('rekap', 'update', "Rekap {$rekap->kode_rekap} diupdate", $rekap);
 

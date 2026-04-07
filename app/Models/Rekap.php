@@ -22,6 +22,7 @@ class Rekap extends Model
         'total_kuli',
         'total_ongkos',
         'keterangan_ongkos',
+        'total_pengurang',
         'total_busuk',
         'pendapatan_bersih',
         'sisa',
@@ -40,6 +41,7 @@ class Rekap extends Model
         'total_komisi'      => 'float',
         'total_kuli'        => 'float',
         'total_ongkos'      => 'float',
+        'total_pengurang'   => 'float',
         'total_busuk'       => 'float',
         'pendapatan_bersih' => 'float',
         'sisa'              => 'float',
@@ -76,6 +78,11 @@ class Rekap extends Model
         return $this->hasMany(KomplainRekap::class, 'rekap_id');
     }
 
+    public function pengurang(): HasMany
+    {
+        return $this->hasMany(PengurangRekap::class, 'rekap_id');
+    }
+
     /**
      * Hitung ulang semua total dari detail dan komplain.
      */
@@ -88,7 +95,8 @@ class Rekap extends Model
         $totalKomisi      = $totalKotor * ($this->komisi_persen / 100);
         $totalKuli        = $this->total_kuli; // manual input, tidak dihitung per-peti
         $totalBusuk       = $this->komplain->sum('total');
-        $pendapatanBersih = $totalKotor + $totalKomisi + $totalKuli + $this->total_ongkos;
+        $totalPengurang   = $this->pengurang->sum('jumlah');
+        $pendapatanBersih = $totalKotor - $totalKomisi - $totalKuli - $this->total_ongkos - $totalPengurang;
         $sisa             = $pendapatanBersih - $totalBusuk;
 
         $this->update([
@@ -96,6 +104,7 @@ class Rekap extends Model
             'total_kotor'       => $totalKotor,
             'total_komisi'      => $totalKomisi,
             'total_busuk'       => $totalBusuk,
+            'total_pengurang'   => $totalPengurang,
             'pendapatan_bersih' => $pendapatanBersih,
             'sisa'              => $sisa,
         ]);

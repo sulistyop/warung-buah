@@ -120,7 +120,7 @@ class NotaController extends Controller
     )]
     public function notaRekap(Request $request, int $id)
     {
-        $rekap = Rekap::with(['supplier', 'details', 'komplain', 'dibuatOleh'])->findOrFail($id);
+        $rekap = Rekap::with(['supplier', 'details', 'komplain', 'pengurang', 'dibuatOleh'])->findOrFail($id);
 
         $namaUsaha    = Setting::get('nama_toko', 'Warung Buah');
         $alamatUsaha  = Setting::get('alamat_toko', '');
@@ -156,6 +156,10 @@ class NotaController extends Controller
                 'total'       => $k->total,
                 'keterangan'  => $k->keterangan,
             ]),
+            'pengurang' => $rekap->pengurang->map(fn($p) => [
+                'nama'   => $p->nama,
+                'jumlah' => $p->jumlah,
+            ]),
             'summary' => [
                 'total_peti'        => $rekap->total_peti,
                 'total_kotor'       => $rekap->total_kotor,
@@ -165,6 +169,7 @@ class NotaController extends Controller
                 'total_kuli'        => $rekap->total_kuli,
                 'total_ongkos'      => $rekap->total_ongkos,
                 'keterangan_ongkos' => $rekap->keterangan_ongkos,
+                'total_pengurang'   => $rekap->total_pengurang,
                 'total_busuk'       => $rekap->total_busuk,
                 'pendapatan_bersih' => $rekap->pendapatan_bersih,
                 'sisa'              => $rekap->sisa,
@@ -276,11 +281,12 @@ class NotaController extends Controller
 
     private function renderNotaRekapHtml(array $data): string
     {
-        $usaha   = $data['usaha'];
-        $rekap   = $data['rekap'];
-        $summary = $data['summary'];
-        $details = $data['details'];
-        $komplain= $data['komplain'];
+        $usaha     = $data['usaha'];
+        $rekap     = $data['rekap'];
+        $summary   = $data['summary'];
+        $details   = $data['details'];
+        $komplain  = $data['komplain'];
+        $pengurang = $data['pengurang'] ?? [];
 
         $fmt = fn($n) => 'Rp ' . number_format($n, 0, ',', '.');
 
@@ -386,7 +392,9 @@ class NotaController extends Controller
       <tr><td style='border:none'>Total</td><td style='border:none;text-align:right'>{$fmt($summary['total_kotor'])}</td></tr>
       <tr><td style='border:none'>Komisi ({$summary['komisi_persen']}%)</td><td style='border:none;text-align:right'>{$fmt($summary['total_komisi'])}</td></tr>
       <tr><td style='border:none'>Kuli</td><td style='border:none;text-align:right'>{$fmt($summary['total_kuli'])}</td></tr>
-      <tr><td style='border:none'>Ongkos" . ($summary['keterangan_ongkos'] ? " ({$summary['keterangan_ongkos']})" : '') . "</td><td style='border:none;text-align:right'>{$fmt($summary['total_ongkos'])}</td></tr>
+      <tr><td style='border:none'>Ongkos" . ($summary['keterangan_ongkos'] ? " ({$summary['keterangan_ongkos']})" : '') . "</td><td style='border:none;text-align:right'>{$fmt($summary['total_ongkos'])}</td></tr>" .
+        implode('', array_map(fn($p) => "
+      <tr><td style='border:none'>{$p['nama']}</td><td style='border:none;text-align:right'>{$fmt($p['jumlah'])}</td></tr>", collect($pengurang)->toArray())) . "
       <tr class='total-row'><td style='border:none'>Pendapatan Bersih</td><td style='border:none;text-align:right'>{$fmt($summary['pendapatan_bersih'])}</td></tr>
       <tr><td style='border:none'>Busuk / Komplain</td><td style='border:none;text-align:right'>- {$fmt($summary['total_busuk'])}</td></tr>
       <tr class='highlight'><td style='border:none'>SISA</td><td style='border:none;text-align:right'>{$fmt($summary['sisa'])}</td></tr>

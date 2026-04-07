@@ -88,6 +88,7 @@ class Rekap extends Model
      */
     public function recalculate(): void
     {
+        $this->load(['details', 'komplain', 'pengurang']);
         $details = $this->details;
 
         $totalPeti        = $details->sum('jumlah_peti');

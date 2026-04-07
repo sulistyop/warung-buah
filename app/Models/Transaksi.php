@@ -105,7 +105,7 @@ class Transaksi extends Model
         $totalKomisi = $totalKotor * ($this->komisi_persen / 100);
         $totalBersih = $totalKotor + $totalBiaya;
 
-        $totalTagihan = $totalKotor;
+        $totalTagihan = $totalBersih;
         $totalDibayar = $this->pembayaran()->sum('nominal');
         $sisaTagihan  = $totalTagihan - $totalDibayar;
 

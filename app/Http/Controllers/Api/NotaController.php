@@ -291,24 +291,30 @@ class NotaController extends Controller
         $fmt = fn($n) => 'Rp ' . number_format($n, 0, ',', '.');
 
         $detailsHtml = '';
-        $currentProduk = '';
+        $currentGroupKey = '';
+        $currentGroupLabel = '';
         $groupSubtotal = 0;
         $groupPeti = 0;
         $details = collect($details)->values()->all();
         foreach ($details as $i => $d) {
-            $isNewProduk = $d['nama_produk'] !== $currentProduk;
-            $nextProduk = isset($details[$i + 1]) ? $details[$i + 1]['nama_produk'] : null;
-            $isLastInGroup = $nextProduk !== $d['nama_produk'];
+            $groupKey = $d['nama_produk'] . '|' . ($d['ukuran'] ?? '');
+            $isNewGroup = $groupKey !== $currentGroupKey;
+            $nextGroupKey = isset($details[$i + 1])
+                ? ($details[$i + 1]['nama_produk'] . '|' . ($details[$i + 1]['ukuran'] ?? ''))
+                : null;
+            $isLastInGroup = $nextGroupKey !== $groupKey;
+            $groupLabel = $d['nama_produk'] . ($d['ukuran'] ? " ({$d['ukuran']})" : '');
 
-            if ($isNewProduk) {
-                if ($currentProduk !== '') {
+            if ($isNewGroup) {
+                if ($currentGroupKey !== '') {
                     // Close previous group with subtotal
-                    $detailsHtml .= "<tr style='background:#f9f9f9'><td colspan='4' style='font-weight:bold;font-size:11px'>Total {$currentProduk}</td><td colspan='2' style='text-align:right;font-weight:bold'>{$fmt($groupSubtotal)}</td></tr>";
+                    $detailsHtml .= "<tr style='background:#f9f9f9'><td colspan='4' style='font-weight:bold;font-size:11px'>Total {$currentGroupLabel}</td><td colspan='2' style='text-align:right;font-weight:bold'>{$fmt($groupSubtotal)}</td></tr>";
                 }
-                $currentProduk = $d['nama_produk'];
+                $currentGroupKey   = $groupKey;
+                $currentGroupLabel = $groupLabel;
                 $groupSubtotal = 0;
                 $groupPeti = 0;
-                $detailsHtml .= "<tr><td colspan='6'><b>{$d['nama_produk']}" . ($d['ukuran'] ? " ({$d['ukuran']})" : '') . "</b></td></tr>";
+                $detailsHtml .= "<tr><td colspan='6'><b>{$groupLabel}</b></td></tr>";
             }
 
             $groupSubtotal += $d['subtotal'];
@@ -324,8 +330,9 @@ class NotaController extends Controller
             </tr>";
 
             if ($isLastInGroup) {
-                $detailsHtml .= "<tr style='background:#f9f9f9'><td colspan='4' style='font-weight:bold;font-size:11px'>Total {$currentProduk}</td><td colspan='2' style='text-align:right;font-weight:bold'>{$fmt($groupSubtotal)}</td></tr>";
-                $currentProduk = ''; // reset so next iteration triggers new group header
+                $detailsHtml .= "<tr style='background:#f9f9f9'><td colspan='4' style='font-weight:bold;font-size:11px'>Total {$currentGroupLabel}</td><td colspan='2' style='text-align:right;font-weight:bold'>{$fmt($groupSubtotal)}</td></tr>";
+                $currentGroupKey   = ''; // reset so next iteration triggers new group header
+                $currentGroupLabel = '';
                 $groupSubtotal = 0;
                 $groupPeti = 0;
             }

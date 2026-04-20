@@ -47,7 +47,7 @@ class DetailBarangDatang extends Model
     {
         $prefix = 'PRD-';
         $last = self::where('kode_produk', 'like', $prefix . '%')
-            ->orderByDesc('id')
+            ->orderByDesc('kode_produk')
             ->first();
 
         $seq = $last ? ((int) substr($last->kode_produk, -4)) + 1 : 1;

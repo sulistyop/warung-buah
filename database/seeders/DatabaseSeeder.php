@@ -37,16 +37,16 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             UserSeeder::class,
-            SettingSeeder::class,
-            KategoriSeeder::class,
-            SupplierSeeder::class,
-            PelangganSeeder::class,
-            BarangDatangSeeder::class,
-            TransaksiSeeder::class,
-            RekapSeeder::class,
-            DepositSeeder::class,
-            PreOrderSeeder::class,
-            LogAktivitasSeeder::class,
+            // SettingSeeder::class,
+            // KategoriSeeder::class,
+            // SupplierSeeder::class,
+            // PelangganSeeder::class,
+            // BarangDatangSeeder::class,
+            // TransaksiSeeder::class,
+            // RekapSeeder::class,
+            // DepositSeeder::class,
+            // PreOrderSeeder::class,
+            // LogAktivitasSeeder::class,
         ]);
     }
 }

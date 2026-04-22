@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use DateTimeInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 class Transaksi extends Model
 {
@@ -77,13 +79,20 @@ class Transaksi extends Model
 
     public static function generateKode(): string
     {
-        $prefix = 'TRX-' . date('Ymd') . '-';
+        $prefix = 'TRX-' . now()->format('Ymd') . '-';
         $last = self::where('kode_transaksi', 'like', $prefix . '%')
             ->orderByDesc('id')
             ->first();
 
         $seq = $last ? ((int) substr($last->kode_transaksi, -4)) + 1 : 1;
         return $prefix . str_pad($seq, 4, '0', STR_PAD_LEFT);
+    }
+
+    protected function serializeDate(DateTimeInterface $date): string
+    {
+        return Carbon::instance($date)
+            ->setTimezone(config('app.timezone', 'Asia/Jakarta'))
+            ->format('Y-m-d H:i:s');
     }
 
     /**
@@ -131,7 +140,7 @@ class Transaksi extends Model
 
     public function getStatusBayarLabelAttribute(): array
     {
-        return match($this->status_bayar) {
+        return match ($this->status_bayar) {
             'lunas'    => ['label' => 'Lunas', 'color' => 'green'],
             'transfer' => ['label' => 'Transfer', 'color' => 'blue'],
             'tempo'    => ['label' => 'Tempo', 'color' => 'yellow'],

@@ -30,7 +30,7 @@ class KasLaci extends Model
 
     public static function generateKode(): string
     {
-        $prefix = 'KAS-' . date('Ymd') . '-';
+        $prefix = 'KAS-' . now()->format('Ymd') . '-';
         $last = self::where('kode_kas', 'like', $prefix . '%')
             ->orderByDesc('id')
             ->first();

@@ -31,7 +31,7 @@ class PreOrder extends Model
 
     public static function generateKode(): string
     {
-        $prefix = 'PO-' . date('Ymd') . '-';
+        $prefix = 'PO-' . now()->format('Ymd') . '-';
         $last = self::where('kode_po', 'like', $prefix . '%')
             ->orderByDesc('id')
             ->first();

@@ -27,7 +27,7 @@ class Pembayaran extends Model
 
     public static function generateKode(): string
     {
-        $prefix = 'PAY-' . date('Ymd') . '-';
+        $prefix = 'PAY-' . now()->format('Ymd') . '-';
         $last = self::where('kode_pembayaran', 'like', $prefix . '%')
             ->orderByDesc('id')
             ->first();

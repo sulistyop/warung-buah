@@ -29,7 +29,7 @@ class Deposit extends Model
 
     public static function generateKode(): string
     {
-        $prefix = 'DEP-' . date('Ymd') . '-';
+        $prefix = 'DEP-' . now()->format('Ymd') . '-';
         $last = self::where('kode_deposit', 'like', $prefix . '%')
             ->orderByDesc('id')
             ->first();

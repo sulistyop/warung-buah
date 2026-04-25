@@ -270,6 +270,7 @@ class TransaksiController extends Controller
     public function store(Request $request)
     {
         $request->validate([
+            'pelanggan_id'         => 'nullable|integer|exists:pelanggan,id',
             'nama_pelanggan'       => 'required|string|max:255',
             'status_bayar'         => 'required|in:lunas,transfer,tempo,cicil',
             'tanggal_jatuh_tempo'  => 'nullable|date',
@@ -294,6 +295,7 @@ class TransaksiController extends Controller
         try {
             $transaksi = Transaksi::create([
                 'kode_transaksi'   => Transaksi::generateKode(),
+                'pelanggan_id'     => $request->pelanggan_id,
                 'nama_pelanggan'   => $request->nama_pelanggan,
                 'status_bayar'     => $request->status_bayar,
                 'tanggal_jatuh_tempo' => $request->tanggal_jatuh_tempo,
@@ -436,6 +438,7 @@ class TransaksiController extends Controller
         }
 
         $request->validate([
+            'pelanggan_id'                => 'nullable|integer|exists:pelanggan,id',
             'nama_pelanggan'              => 'required|string|max:255',
             'status_bayar'                => 'required|in:lunas,transfer,tempo,cicil',
             'tanggal_jatuh_tempo'         => 'nullable|date',
@@ -457,6 +460,7 @@ class TransaksiController extends Controller
         try {
             // Update header transaksi
             $transaksi->update([
+                'pelanggan_id'         => $request->pelanggan_id ?? $transaksi->pelanggan_id,
                 'nama_pelanggan'       => $request->nama_pelanggan,
                 'status_bayar'         => $request->status_bayar,
                 'tanggal_jatuh_tempo'  => $request->tanggal_jatuh_tempo,

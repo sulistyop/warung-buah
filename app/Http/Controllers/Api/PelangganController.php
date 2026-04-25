@@ -41,6 +41,8 @@ class PelangganController extends Controller
         $pelanggan = $query->orderBy('nama')
             ->paginate($request->input('per_page', 50));
 
+        $pelanggan->getCollection()->each->append(['total_piutang', 'total_deposit']);
+
         return $this->success($pelanggan);
     }
 

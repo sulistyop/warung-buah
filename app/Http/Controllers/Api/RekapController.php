@@ -248,16 +248,16 @@ class RekapController extends Controller
                         'total_berat_bersih' => $beratBersih,
                         'subtotal'           => $subtotal,
                         '_kode_bd'           => $bd->kode_bd,
+                        '_detail_id'         => $detail->id,
                         '_item_transaksi_id' => $item->id,
                     ];
                 }
             }
         }
 
-        // Urutkan: nama_produk → ukuran → item_transaksi_id (urutan masuk)
+        // Urutkan sesuai urutan input di barang datang: detail_id → item_transaksi_id
         usort($rows, fn($a, $b) =>
-            $a['nama_produk'] <=> $b['nama_produk']
-            ?: ($a['ukuran'] ?? '') <=> ($b['ukuran'] ?? '')
+            $a['_detail_id'] <=> $b['_detail_id']
             ?: $a['_item_transaksi_id'] <=> $b['_item_transaksi_id']
         );
 

@@ -295,7 +295,17 @@ class NotaController extends Controller
         $currentGroupLabel = '';
         $groupSubtotal = 0;
         $groupPeti = 0;
-        $details = collect($details)->values()->all();
+        $groupBKotor = 0;
+        $groupBPeti = 0;
+        $groupBBersih = 0;
+        // Pertahankan urutan group sesuai urutan input (database order),
+        // tapi dalam tiap group urutkan dari harga tertinggi ke terendah.
+        $details = collect($details)
+            ->groupBy(fn($d) => $d['nama_produk'] . '|' . ($d['ukuran'] ?? ''))
+            ->map(fn($group) => $group->sortByDesc('harga_per_kg'))
+            ->flatten(1)
+            ->values()
+            ->all();
         foreach ($details as $i => $d) {
             $groupKey = $d['nama_produk'] . '|' . ($d['ukuran'] ?? '');
             $isNewGroup = $groupKey !== $currentGroupKey;
@@ -306,19 +316,21 @@ class NotaController extends Controller
             $groupLabel = $d['nama_produk'] . ($d['ukuran'] ? " ({$d['ukuran']})" : '');
 
             if ($isNewGroup) {
-                if ($currentGroupKey !== '') {
-                    // Close previous group with subtotal
-                    $detailsHtml .= "<tr style='background:#f9f9f9'><td colspan='4' style='font-weight:bold;font-size:11px'>Total {$currentGroupLabel}</td><td colspan='2' style='text-align:right;font-weight:bold'>{$fmt($groupSubtotal)}</td></tr>";
-                }
                 $currentGroupKey   = $groupKey;
                 $currentGroupLabel = $groupLabel;
                 $groupSubtotal = 0;
                 $groupPeti = 0;
+                $groupBKotor = 0;
+                $groupBPeti = 0;
+                $groupBBersih = 0;
                 $detailsHtml .= "<tr><td colspan='6'><b>{$groupLabel}</b></td></tr>";
             }
 
             $groupSubtotal += $d['subtotal'];
-            $groupPeti += $d['jumlah_peti'];
+            $groupPeti     += $d['jumlah_peti'];
+            $groupBKotor   += $d['total_berat_kotor'];
+            $groupBPeti    += $d['total_berat_peti'];
+            $groupBBersih  += $d['total_berat_bersih'];
 
             $detailsHtml .= "<tr>
                 <td>{$d['jumlah_peti']} peti</td>
@@ -330,11 +342,15 @@ class NotaController extends Controller
             </tr>";
 
             if ($isLastInGroup) {
-                $detailsHtml .= "<tr style='background:#f9f9f9'><td colspan='4' style='font-weight:bold;font-size:11px'>Total {$currentGroupLabel}</td><td colspan='2' style='text-align:right;font-weight:bold'>{$fmt($groupSubtotal)}</td></tr>";
-                $currentGroupKey   = ''; // reset so next iteration triggers new group header
-                $currentGroupLabel = '';
-                $groupSubtotal = 0;
-                $groupPeti = 0;
+                $detailsHtml .= "<tr style='background:#e8f0fe'>
+                    <td style='font-weight:bold;font-size:11px'>{$groupPeti} peti</td>
+                    <td style='text-align:right;font-weight:bold;font-size:11px'>{$groupBKotor}</td>
+                    <td style='text-align:right;font-weight:bold;font-size:11px'>{$groupBPeti}</td>
+                    <td style='text-align:right;font-weight:bold;font-size:11px'>{$groupBBersih}</td>
+                    <td style='font-weight:bold;font-size:11px'>Sub Total {$currentGroupLabel}</td>
+                    <td style='text-align:right;font-weight:bold'>{$fmt($groupSubtotal)}</td>
+                </tr>";
+                $currentGroupKey = '';
             }
         }
 
@@ -384,7 +400,7 @@ class NotaController extends Controller
     <thead><tr><th>Peti</th><th>B.Kotor</th><th>B.Peti</th><th>B.Bersih</th><th style='text-align:right'>Harga/kg</th><th style='text-align:right'>Jumlah</th></tr></thead>
     <tbody>{$detailsHtml}</tbody>
     <tfoot>
-      <tr class='total-row'><td>Total: {$summary['total_peti']} peti</td><td colspan='4'></td><td style='text-align:right'>{$fmt($summary['total_kotor'])}</td></tr>
+      <tr class='total-row'><td colspan='5' style='font-weight:bold'>Grand Total: {$summary['total_peti']} peti</td><td style='text-align:right'>{$fmt($summary['total_kotor'])}</td></tr>
     </tfoot>
   </table>" .
   (!empty($komplain) ? "

@@ -354,6 +354,10 @@ class NotaController extends Controller
             }
         }
 
+        $grandBKotor  = collect($details)->sum('total_berat_kotor');
+        $grandBPeti   = collect($details)->sum('total_berat_peti');
+        $grandBBersih = collect($details)->sum('total_berat_bersih');
+
         $komplainHtml = '';
         foreach ($komplain as $k) {
             $komplainHtml .= "<tr>
@@ -400,7 +404,14 @@ class NotaController extends Controller
     <thead><tr><th>Peti</th><th>B.Kotor</th><th>B.Peti</th><th>B.Bersih</th><th style='text-align:right'>Harga/kg</th><th style='text-align:right'>Jumlah</th></tr></thead>
     <tbody>{$detailsHtml}</tbody>
     <tfoot>
-      <tr class='total-row'><td colspan='5' style='font-weight:bold'>Grand Total: {$summary['total_peti']} peti</td><td style='text-align:right'>{$fmt($summary['total_kotor'])}</td></tr>
+      <tr class='total-row'>
+        <td style='font-weight:bold'>Grand Total: {$summary['total_peti']} peti</td>
+        <td style='text-align:right;font-weight:bold'>{$grandBKotor}</td>
+        <td style='text-align:right;font-weight:bold'>{$grandBPeti}</td>
+        <td style='text-align:right;font-weight:bold'>{$grandBBersih}</td>
+        <td></td>
+        <td style='text-align:right;font-weight:bold'>{$fmt($summary['total_kotor'])}</td>
+      </tr>
     </tfoot>
   </table>" .
   (!empty($komplain) ? "

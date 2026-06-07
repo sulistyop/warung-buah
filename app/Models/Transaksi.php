@@ -135,6 +135,10 @@ class Transaksi extends Model
             }
         } elseif ($totalDibayar > 0 && $sisaTagihan > 0) {
             $this->update(['status_bayar' => 'cicil']);
+        } elseif ($totalDibayar <= 0 && $sisaTagihan > 0) {
+            if (!in_array($this->status_bayar, ['transfer'])) {
+                $this->update(['status_bayar' => 'tempo']);
+            }
         }
     }
 

@@ -38,7 +38,14 @@ class PiutangController extends Controller
         }
 
         if ($request->filled('nama_pelanggan')) {
-            $query->where('nama_pelanggan', 'like', '%' . $request->nama_pelanggan . '%');
+            $search = $request->nama_pelanggan;
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_pelanggan', 'like', "%{$search}%")
+                  ->orWhereHas('pelanggan', function ($pq) use ($search) {
+                      $pq->where('nama', 'like', "%{$search}%")
+                         ->orWhere('toko', 'like', "%{$search}%");
+                  });
+            });
         }
 
         if ($request->boolean('jatuh_tempo')) {

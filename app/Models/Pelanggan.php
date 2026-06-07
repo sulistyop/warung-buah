@@ -51,6 +51,7 @@ class Pelanggan extends Model
     {
         return (float) $this->transaksi()
             ->whereIn('status_bayar', ['tempo', 'cicil'])
+            ->where('sisa_tagihan', '>', 0)
             ->sum('sisa_tagihan');
     }
 

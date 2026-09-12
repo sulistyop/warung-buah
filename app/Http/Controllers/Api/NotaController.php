@@ -34,9 +34,26 @@ class NotaController extends Controller
             'itemTransaksi.detailPeti',
             'biayaOperasional',
             'pembayaran',
+            'komplainTransaksi.itemTransaksi',
             'pelanggan',
             'user',
         ])->findOrFail($id);
+
+        // Komplain/BS: nominal potongan = jumlah_bs × harga_per_kg item
+        // (harga_ganti/total di tabel selalu 0; potongan dihitung di recalculate()).
+        $komplainList = $transaksi->komplainTransaksi->map(function ($k) {
+            $harga = (float) ($k->itemTransaksi->harga_per_kg ?? 0);
+            return [
+                'nama_produk'  => $k->nama_produk,
+                'jumlah_bs'    => (float) $k->jumlah_bs,
+                'harga_per_kg' => $harga,
+                'total'        => (float) $k->jumlah_bs * $harga,
+            ];
+        })->values();
+        // Bruto sebelum potong BS = jumlah subtotal item. total_kotor (tersimpan)
+        // sudah bruto − BS, jadi total_bs = bruto − total_kotor (konsisten dgn floor 0).
+        $totalBruto = (float) $transaksi->itemTransaksi->sum('subtotal');
+        $totalBs    = (float) $komplainList->sum('total');
 
         $namaUsaha   = Setting::get('nama_toko', 'Warung Buah');
         $alamatUsaha = Setting::get('alamat_toko', '');
@@ -78,6 +95,7 @@ class NotaController extends Controller
                 'nama_biaya' => $b->nama_biaya,
                 'nominal'    => $b->nominal,
             ]),
+            'komplain' => $komplainList,
             'pembayaran' => $transaksi->pembayaran->map(fn($p) => [
                 'kode'    => $p->kode_pembayaran,
                 'nominal' => $p->nominal,
@@ -85,6 +103,8 @@ class NotaController extends Controller
                 'tanggal' => $p->created_at->format('d/m/Y H:i'),
             ]),
             'summary' => [
+                'total_bruto'            => $totalBruto,
+                'total_bs'               => $totalBs,
                 'total_kotor'            => $transaksi->total_kotor,
                 'total_komisi'           => $transaksi->total_komisi,
                 'komisi_persen'          => $transaksi->komisi_persen,
@@ -222,10 +242,21 @@ class NotaController extends Controller
             $itemsHtml .= "<tr><td colspan='2'><hr style='border:none;border-top:1px dashed #ccc'></td></tr>";
         }
 
+        $komplain = $data['komplain'] ?? [];
+        $komplainHtml = '';
+        foreach ($komplain as $k) {
+            $kg = rtrim(rtrim(number_format($k['jumlah_bs'], 1, ',', '.'), '0'), ',');
+            $komplainHtml .= "<tr><td>BS {$k['nama_produk']} {$kg}kg</td><td style='text-align:right'>- {$fmt($k['total'])}</td></tr>";
+        }
+
         $biayaHtml = '';
         foreach ($biaya as $b) {
             $biayaHtml .= "<tr><td>{$b['nama_biaya']}</td><td style='text-align:right'>{$fmt($b['nominal'])}</td></tr>";
         }
+
+        // "Jumlah" pakai bruto (sebelum BS) supaya potongan BS kelihatan; kalau
+        // tidak ada data bruto (kompat lama) fallback ke total_kotor.
+        $jumlahBruto = $summary['total_bruto'] ?? $summary['total_kotor'];
 
         $bayarHtml = '';
         foreach ($bayar as $p) {
@@ -264,7 +295,8 @@ class NotaController extends Controller
   <table>{$itemsHtml}</table>
   <div class='divider'></div>
   <table>
-    <tr><td>Total Kotor</td><td style='text-align:right'>{$fmt($summary['total_kotor'])}</td></tr>
+    <tr><td>Jumlah</td><td style='text-align:right'>{$fmt($jumlahBruto)}</td></tr>
+    {$komplainHtml}
     {$biayaHtml}
     <tr class='total-row'><td>TOTAL TAGIHAN</td><td style='text-align:right'>{$fmt($summary['total_tagihan'])}</td></tr>
   </table>

@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
+use DateTimeInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -23,10 +25,22 @@ class KasLaci extends Model
     ];
 
     protected $casts = [
-        'tanggal' => 'date',
+        // date:Y-m-d supaya diserialisasi sebagai tanggal polos "2026-09-12"
+        // tanpa jam/timezone — mencegah geser 1 hari di tampilan (WIB->UTC).
+        'tanggal' => 'date:Y-m-d',
         'nominal' => 'float',
         'is_auto' => 'boolean',
     ];
+
+    // created_at/updated_at diserialisasi dalam WIB ('Y-m-d H:i:s') supaya
+    // waktu input tampil apa adanya untuk keperluan audit. Tidak memengaruhi
+    // `tanggal` yang sudah pakai cast custom `date:Y-m-d`.
+    protected function serializeDate(DateTimeInterface $date): string
+    {
+        return Carbon::instance($date)
+            ->setTimezone(config('app.timezone', 'Asia/Jakarta'))
+            ->format('Y-m-d H:i:s');
+    }
 
     public static function generateKode(): string
     {

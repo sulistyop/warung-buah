@@ -19,6 +19,7 @@ class KasLaciController extends Controller
             new OA\Parameter(name: 'tanggal_dari', in: 'query', schema: new OA\Schema(type: 'string', format: 'date')),
             new OA\Parameter(name: 'tanggal_sampai', in: 'query', schema: new OA\Schema(type: 'string', format: 'date')),
             new OA\Parameter(name: 'jenis', in: 'query', schema: new OA\Schema(type: 'string', enum: ['masuk', 'keluar'])),
+            new OA\Parameter(name: 'cari', in: 'query', description: 'Cari di keterangan', schema: new OA\Schema(type: 'string')),
         ],
         responses: [new OA\Response(response: 200, description: 'Success')]
     )]
@@ -28,6 +29,7 @@ class KasLaciController extends Controller
             'tanggal_dari'   => 'nullable|date',
             'tanggal_sampai' => 'nullable|date',
             'jenis'          => 'nullable|in:masuk,keluar',
+            'cari'           => 'nullable|string|max:100',
         ]);
 
         $query = KasLaci::with('dibuatOleh')
@@ -65,6 +67,15 @@ class KasLaciController extends Controller
             $entry->saldo = $runningSaldo;
             return $entry;
         });
+
+        // Filter kata kunci di keterangan — dilakukan SETELAH running saldo
+        // dihitung, supaya "Saldo:" per baris tetap benar saat hasil disaring.
+        if ($request->filled('cari')) {
+            $kw = mb_strtolower($request->cari);
+            $result = $result->filter(
+                fn ($entry) => str_contains(mb_strtolower($entry->keterangan), $kw)
+            )->values();
+        }
 
         return $this->success([
             'saldo_awal' => $saldoAwal,
@@ -135,6 +146,7 @@ class KasLaciController extends Controller
         parameters: [
             new OA\Parameter(name: 'tanggal_dari', in: 'query', schema: new OA\Schema(type: 'string', format: 'date')),
             new OA\Parameter(name: 'tanggal_sampai', in: 'query', schema: new OA\Schema(type: 'string', format: 'date')),
+            new OA\Parameter(name: 'cari', in: 'query', description: 'Cari di keterangan', schema: new OA\Schema(type: 'string')),
         ],
         responses: [new OA\Response(response: 200, description: 'Success')]
     )]
@@ -143,6 +155,7 @@ class KasLaciController extends Controller
         $request->validate([
             'tanggal_dari'   => 'nullable|date',
             'tanggal_sampai' => 'nullable|date',
+            'cari'           => 'nullable|string|max:100',
         ]);
 
         $query = KasLaci::query();
@@ -152,6 +165,9 @@ class KasLaciController extends Controller
         }
         if ($request->filled('tanggal_sampai')) {
             $query->whereDate('tanggal', '<=', $request->tanggal_sampai);
+        }
+        if ($request->filled('cari')) {
+            $query->where('keterangan', 'like', '%' . $request->cari . '%');
         }
 
         $totalMasuk  = (clone $query)->where('jenis', 'masuk')->sum('nominal');

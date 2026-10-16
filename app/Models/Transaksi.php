@@ -47,6 +47,18 @@ class Transaksi extends Model
         'kembalian'               => 'float',
     ];
 
+    protected static function booted(): void
+    {
+        // Cicil/Tempo: default jatuh tempo 7 hari sejak transaksi dibuat bila
+        // belum di-set. Dipakai fitur daftar tagihan jatuh tempo di beranda.
+        static::creating(function (self $trx) {
+            if (in_array($trx->status_bayar, ['tempo', 'cicil'], true)
+                && empty($trx->tanggal_jatuh_tempo)) {
+                $trx->tanggal_jatuh_tempo = Carbon::now()->addDays(7)->toDateString();
+            }
+        });
+    }
+
     public function itemTransaksi(): HasMany
     {
         return $this->hasMany(ItemTransaksi::class, 'transaksi_id');

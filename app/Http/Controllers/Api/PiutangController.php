@@ -199,4 +199,39 @@ class PiutangController extends Controller
 
         return $this->success($data);
     }
+
+    /**
+     * Daftar tagihan yang SUDAH jatuh tempo (umur >= 7 hari & belum lunas),
+     * dikelompokkan per pelanggan, diurut nama. Untuk section "Perlu Ditagih"
+     * di beranda. Badge umur (7/14/21/28+ hari) dihitung frontend dari umur_hari.
+     */
+    #[OA\Get(
+        path: '/api/piutang/tagihan',
+        tags: ['Piutang'],
+        summary: 'Daftar tagihan jatuh tempo per pelanggan (urut nama)',
+        security: [['bearerAuth' => []]],
+        responses: [new OA\Response(response: 200, description: 'Success')]
+    )]
+    public function tagihanJatuhTempo(Request $request)
+    {
+        $data = Transaksi::selectRaw("
+                transaksi.pelanggan_id,
+                COALESCE(pelanggan.nama, transaksi.nama_pelanggan) as nama,
+                COUNT(*) as jumlah_transaksi,
+                SUM(transaksi.sisa_tagihan) as total_sisa,
+                MIN(transaksi.tanggal_jatuh_tempo) as jatuh_tempo_terdekat,
+                MIN(DATE(transaksi.created_at)) as transaksi_terlama,
+                DATEDIFF(CURDATE(), MIN(DATE(transaksi.created_at))) as umur_hari
+            ")
+            ->leftJoin('pelanggan', 'transaksi.pelanggan_id', '=', 'pelanggan.id')
+            ->whereIn('transaksi.status_bayar', ['tempo', 'cicil'])
+            ->where('transaksi.sisa_tagihan', '>', 0)
+            ->whereNotNull('transaksi.tanggal_jatuh_tempo')
+            ->whereDate('transaksi.tanggal_jatuh_tempo', '<=', now())
+            ->groupByRaw('transaksi.pelanggan_id, COALESCE(pelanggan.nama, transaksi.nama_pelanggan)')
+            ->orderBy('nama')
+            ->get();
+
+        return $this->success($data);
+    }
 }

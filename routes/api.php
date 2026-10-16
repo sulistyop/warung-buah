@@ -77,6 +77,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/', [PiutangController::class, 'index'])->middleware('permission:piutang,read');
         Route::post('/bayar', [PiutangController::class, 'bayar'])->middleware('permission:piutang,update');
         Route::get('/rekap-pelanggan', [PiutangController::class, 'rekapPelanggan'])->middleware('permission:piutang,read');
+        Route::get('/tagihan', [PiutangController::class, 'tagihanJatuhTempo'])->middleware('permission:piutang,read');
     });
 
     // ── Transaksi (Penjualan) ─────────────────────────────────────────────────

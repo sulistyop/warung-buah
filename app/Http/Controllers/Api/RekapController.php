@@ -84,6 +84,7 @@ class RekapController extends Controller
         $belumHabis = [];
         foreach ($barangDatangList as $bd) {
             foreach ($bd->details as $detail) {
+                if (!$detail->aktif) continue; // letter nonaktif tidak dihitung untuk status habis
                 if ($detail->status_stok !== 'habis') {
                     $belumHabis[] = [
                         'kode_bd'     => $bd->kode_bd,
@@ -154,6 +155,7 @@ class RekapController extends Controller
             $grouped[$key]['kode_bd_list'][] = $bd->kode_bd;
 
             foreach ($bd->details as $detail) {
+                if (!$detail->aktif) continue; // letter nonaktif tidak dihitung untuk status habis
                 $grouped[$key]['total_letter']++;
                 if ($detail->status_stok !== 'habis') {
                     $grouped[$key]['semua_habis'] = false;
@@ -370,6 +372,7 @@ class RekapController extends Controller
         $belumHabis = [];
         foreach ($barangDatangList as $bd) {
             foreach ($bd->details as $detail) {
+                if (!$detail->aktif) continue; // letter nonaktif tidak dihitung untuk status habis
                 if ($detail->status_stok !== 'habis') {
                     $belumHabis[] = $detail->nama_produk . ' (' . $detail->ukuran . ') sisa ' . $detail->stok_sisa;
                 }

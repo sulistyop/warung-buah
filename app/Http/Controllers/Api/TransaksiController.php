@@ -11,6 +11,7 @@ use App\Models\KasLaci;
 use App\Models\Pembayaran;
 use App\Models\Setting;
 use App\Models\DetailBarangDatang;
+use App\Models\LogAktivitas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -419,6 +420,11 @@ class TransaksiController extends Controller
                 'user',
             ]);
 
+            LogAktivitas::catat('transaksi', 'create',
+                "Buat transaksi {$transaksi->kode_transaksi} ({$transaksi->nama_pelanggan}) - {$transaksi->status_bayar} Rp" . number_format($transaksi->total_tagihan, 0),
+                $transaksi, null,
+                $transaksi->only(['kode_transaksi', 'nama_pelanggan', 'status_bayar', 'total_tagihan', 'sisa_tagihan']));
+
             return $this->success($transaksi, 'Transaksi berhasil disimpan', 201);
 
         } catch (\Exception $e) {
@@ -436,6 +442,8 @@ class TransaksiController extends Controller
         if (!$transaksi) {
             return $this->error('Transaksi tidak ditemukan', 404);
         }
+
+        $dataLama = $transaksi->only(['nama_pelanggan', 'status_bayar', 'total_tagihan', 'total_dibayar', 'sisa_tagihan', 'tanggal_jatuh_tempo']);
 
         $request->validate([
             'pelanggan_id'                => 'nullable|integer|exists:pelanggan,id',
@@ -515,6 +523,11 @@ class TransaksiController extends Controller
                 'komplainTransaksi',
                 'user',
             ]);
+
+            LogAktivitas::catat('transaksi', 'update',
+                "Edit transaksi {$transaksi->kode_transaksi} ({$transaksi->nama_pelanggan})",
+                $transaksi, $dataLama,
+                $transaksi->fresh()->only(['nama_pelanggan', 'status_bayar', 'total_tagihan', 'total_dibayar', 'sisa_tagihan', 'tanggal_jatuh_tempo']));
 
             return $this->success($transaksi, 'Transaksi berhasil diperbarui');
 
@@ -615,8 +628,13 @@ class TransaksiController extends Controller
             return $this->error('Transaksi tidak ditemukan', 404);
         }
 
+        $dataLama = $transaksi->only(['kode_transaksi', 'nama_pelanggan', 'status_bayar', 'total_tagihan', 'total_dibayar', 'sisa_tagihan']);
         KasLaci::where('referensi_tipe', 'transaksi')->where('referensi_id', $transaksi->id)->delete();
         $transaksi->delete();
+
+        LogAktivitas::catat('transaksi', 'delete',
+            "Hapus transaksi {$dataLama['kode_transaksi']} ({$dataLama['nama_pelanggan']}) Rp" . number_format($dataLama['total_tagihan'], 0),
+            $transaksi, $dataLama);
 
         return $this->success(null, 'Transaksi berhasil dihapus');
     }

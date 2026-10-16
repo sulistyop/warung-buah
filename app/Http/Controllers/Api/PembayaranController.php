@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Models\KasLaci;
 use App\Models\Pembayaran;
 use App\Models\Transaksi;
+use App\Models\LogAktivitas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use OpenApi\Attributes as OA;
@@ -241,6 +242,11 @@ class PembayaranController extends Controller
 
             $pembayaran->load('user');
 
+            LogAktivitas::catat('pembayaran', 'create',
+                "Catat pembayaran {$pembayaran->kode_pembayaran} Rp" . number_format($pembayaran->nominal, 0) . " ({$pembayaran->metode}) utk transaksi {$transaksi->kode_transaksi}",
+                $pembayaran, null,
+                $pembayaran->only(['kode_pembayaran', 'nominal', 'metode', 'sisa_tagihan']));
+
             return $this->success($pembayaran, 'Pembayaran berhasil dicatat', 201);
 
         } catch (\Exception $e) {
@@ -285,6 +291,7 @@ class PembayaranController extends Controller
         }
 
         $transaksi = $pembayaran->transaksi;
+        $dataLama = $pembayaran->only(['kode_pembayaran', 'nominal', 'metode']);
 
         DB::beginTransaction();
         try {
@@ -297,6 +304,10 @@ class PembayaranController extends Controller
                 $newStatus = $transaksi->pembayaran()->count() > 0 ? 'cicil' : 'tempo';
                 $transaksi->update(['status_bayar' => $newStatus]);
             }
+
+            LogAktivitas::catat('pembayaran', 'delete',
+                "Hapus pembayaran {$dataLama['kode_pembayaran']} Rp" . number_format($dataLama['nominal'], 0) . " dari transaksi " . ($transaksi->kode_transaksi ?? '-'),
+                $pembayaran, $dataLama);
 
             DB::commit();
 

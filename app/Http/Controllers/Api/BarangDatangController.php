@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Models\BarangDatang;
 use App\Models\DetailBarangDatang;
 use App\Models\Transaksi;
+use App\Models\LogAktivitas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use OpenApi\Attributes as OA;
@@ -554,7 +555,12 @@ class BarangDatangController extends Controller
             return $this->error('Barang datang sudah dikonfirmasi, tidak dapat dihapus', 403);
         }
 
+        $dataLama = $bd->only(['kode_bd', 'supplier_id', 'status']);
         $bd->delete();
+
+        LogAktivitas::catat('barang_datang', 'delete',
+            "Hapus barang datang {$dataLama['kode_bd']}", $bd, $dataLama);
+
         return $this->success(null, 'Barang datang berhasil dihapus');
     }
 

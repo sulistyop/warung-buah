@@ -349,6 +349,18 @@ class BarangDatangController extends Controller
         if (!$bd) {
             return $this->error('Barang datang tidak ditemukan', 404);
         }
+
+        // Snapshot sebelum edit untuk log aktivitas (fokus letter yg rawan diubah).
+        $snapDetail = fn ($m) => $m->details->map(fn ($d) => [
+            'letter'     => trim($d->nama_produk . ' ' . ($d->ukuran ?? '')),
+            'jumlah'     => $d->jumlah,
+            'stok_awal'  => $d->stok_awal,
+            'harga_beli' => $d->harga_beli,
+            'harga_jual' => $d->harga_jual,
+            'aktif'      => $d->aktif,
+        ])->toArray();
+        $dataLama = ['catatan' => $bd->catatan, 'details' => $snapDetail($bd)];
+
         $request->validate([
             'catatan'                   => 'nullable|string',
             'details'                   => 'sometimes|array|min:1',
@@ -490,6 +502,12 @@ class BarangDatangController extends Controller
             DB::commit();
 
             $bd->load(['supplier', 'details.kategori']);
+
+            LogAktivitas::catat('barang_datang', 'update',
+                "Edit barang datang {$bd->kode_bd}", $bd,
+                $dataLama,
+                ['catatan' => $bd->catatan, 'details' => $snapDetail($bd)]);
+
             return $this->success($bd, 'Barang datang berhasil diupdate');
         } catch (\Exception $e) {
             DB::rollBack();

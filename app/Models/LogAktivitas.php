@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
+use DateTimeInterface;
 
 class LogAktivitas extends Model
 {
@@ -30,6 +32,14 @@ class LogAktivitas extends Model
         'data_baru'  => 'array',
         'created_at' => 'datetime',
     ];
+
+    // Serialisasi tanggal ke WIB plain (tanpa Z) agar jam log tampil benar di app.
+    protected function serializeDate(DateTimeInterface $date): string
+    {
+        return Carbon::instance($date)
+            ->setTimezone(config('app.timezone', 'Asia/Jakarta'))
+            ->format('Y-m-d H:i:s');
+    }
 
     public function user(): BelongsTo
     {

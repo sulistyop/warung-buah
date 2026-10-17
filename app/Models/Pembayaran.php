@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
+use DateTimeInterface;
 
 class Pembayaran extends Model
 {
@@ -24,6 +26,15 @@ class Pembayaran extends Model
         'nominal' => 'float',
         'sisa_tagihan' => 'float',
     ];
+
+    // Serialisasi tanggal ke WIB plain (tanpa Z) agar jam tampil benar di app,
+    // konsisten dengan model Transaksi.
+    protected function serializeDate(DateTimeInterface $date): string
+    {
+        return Carbon::instance($date)
+            ->setTimezone(config('app.timezone', 'Asia/Jakarta'))
+            ->format('Y-m-d H:i:s');
+    }
 
     public static function generateKode(): string
     {

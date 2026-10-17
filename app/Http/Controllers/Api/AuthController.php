@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\User;
+use App\Models\LogAktivitas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -275,7 +276,11 @@ class AuthController extends Controller
             'email' => 'sometimes|required|email|max:255|unique:users,email,' . $user->id,
         ]);
 
+        $dataLama = $user->only(['name', 'email']);
         $user->update($request->only(['name', 'email']));
+
+        LogAktivitas::catat('user', 'update',
+            "Edit profil {$user->name}", $user, $dataLama, $user->only(['name', 'email']));
 
         return $this->success($this->formatUser($user), 'Profile berhasil diupdate');
     }
@@ -323,6 +328,9 @@ class AuthController extends Controller
         $user->update([
             'password' => Hash::make($request->password),
         ]);
+
+        LogAktivitas::catat('user', 'ganti_password',
+            "Ganti password {$user->name}", $user);
 
         return $this->success(null, 'Password berhasil diganti');
     }

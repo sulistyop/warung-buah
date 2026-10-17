@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\Kategori;
+use App\Models\LogAktivitas;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
 
@@ -220,6 +221,10 @@ class KategoriController extends Controller
             'aktif' => $request->aktif ?? true,
         ]);
 
+        LogAktivitas::catat('kategori', 'create',
+            "Tambah kategori {$kategori->nama_kategori}", $kategori, null,
+            $kategori->only(['nama_kategori', 'warna']));
+
         return $this->success($kategori, 'Kategori berhasil ditambahkan', 201);
     }
 
@@ -271,6 +276,8 @@ class KategoriController extends Controller
             return $this->error('Kategori tidak ditemukan', 404);
         }
 
+        $dataLama = $kategori->only(['nama_kategori', 'deskripsi', 'warna', 'aktif']);
+
         $request->validate([
             'nama_kategori' => 'sometimes|required|string|max:100',
             'deskripsi' => 'nullable|string|max:255',
@@ -279,6 +286,10 @@ class KategoriController extends Controller
         ]);
 
         $kategori->update($request->only(['nama_kategori', 'deskripsi', 'warna', 'aktif']));
+
+        LogAktivitas::catat('kategori', 'update',
+            "Edit kategori {$kategori->nama_kategori}", $kategori,
+            $dataLama, $kategori->only(['nama_kategori', 'deskripsi', 'warna', 'aktif']));
 
         return $this->success($kategori, 'Kategori berhasil diupdate');
     }
@@ -323,7 +334,11 @@ class KategoriController extends Controller
             return $this->error('Kategori tidak bisa dihapus karena masih ada produk terkait', 400);
         }
 
+        $dataLama = $kategori->only(['nama_kategori', 'warna']);
         $kategori->delete();
+
+        LogAktivitas::catat('kategori', 'delete',
+            "Hapus kategori {$dataLama['nama_kategori']}", $kategori, $dataLama);
 
         return $this->success(null, 'Kategori berhasil dihapus');
     }

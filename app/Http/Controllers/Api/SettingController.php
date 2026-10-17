@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\Setting;
+use App\Models\LogAktivitas;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
 
@@ -138,6 +139,16 @@ class SettingController extends Controller
             'telepon_toko'  => 'nullable|string|max:50',
         ]);
 
+        $kunciSetting = ['komisi_persen', 'nama_toko', 'alamat_toko', 'telepon_toko'];
+        $dataLama = [];
+        $dataBaru = [];
+        foreach ($kunciSetting as $k) {
+            if ($request->has($k)) {
+                $dataLama[$k] = Setting::get($k);
+                $dataBaru[$k] = $request->$k;
+            }
+        }
+
         if ($request->has('komisi_persen')) {
             Setting::set('komisi_persen', $request->komisi_persen);
         }
@@ -153,6 +164,9 @@ class SettingController extends Controller
         if ($request->has('telepon_toko')) {
             Setting::set('telepon_toko', $request->telepon_toko);
         }
+
+        LogAktivitas::catat('setting', 'update',
+            'Ubah pengaturan toko', null, $dataLama, $dataBaru);
 
         return $this->success(null, 'Pengaturan berhasil disimpan');
     }
@@ -299,6 +313,9 @@ class SettingController extends Controller
                 Setting::set($field, $value);
             }
         }
+
+        LogAktivitas::catat('setting', 'update',
+            'Ubah pengaturan printer', null, null, $request->only($fields));
 
         return $this->success([
             'printer_address'      => Setting::get('printer_address'),

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\Supplier;
+use App\Models\LogAktivitas;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
 
@@ -177,6 +178,10 @@ class SupplierController extends Controller
             'aktif'         => true,
         ]);
 
+        LogAktivitas::catat('supplier', 'create',
+            "Tambah supplier {$supplier->nama_supplier}", $supplier, null,
+            $supplier->only(['kode_supplier', 'nama_supplier', 'telepon', 'kota']));
+
         return $this->success($supplier, 'Supplier berhasil ditambahkan', 201);
     }
 
@@ -232,6 +237,9 @@ class SupplierController extends Controller
             return $this->error('Supplier tidak ditemukan', 404);
         }
 
+        $kolomLog = ['nama_supplier', 'telepon', 'email', 'alamat', 'kota', 'komisi_persen', 'kuli_per_peti', 'aktif'];
+        $dataLama = $supplier->only($kolomLog);
+
         $request->validate([
             'nama_supplier' => 'sometimes|required|string|max:255',
             'telepon'       => 'nullable|string|max:20',
@@ -250,6 +258,10 @@ class SupplierController extends Controller
             'kota', 'kontak_person', 'catatan',
             'komisi_persen', 'kuli_per_peti', 'aktif',
         ]));
+
+        LogAktivitas::catat('supplier', 'update',
+            "Edit supplier {$supplier->nama_supplier}", $supplier,
+            $dataLama, $supplier->only($kolomLog));
 
         return $this->success($supplier, 'Supplier berhasil diupdate');
     }
@@ -306,10 +318,16 @@ class SupplierController extends Controller
         if (!empty($blockers)) {
             $supplier->update(['aktif' => false]);
             $msg = 'Supplier dinonaktifkan karena terkait: ' . implode(', ', $blockers);
+            LogAktivitas::catat('supplier', 'nonaktif',
+                "Nonaktifkan supplier {$supplier->nama_supplier} (terkait: " . implode(', ', $blockers) . ')', $supplier);
             return $this->success($supplier, $msg);
         }
 
+        $dataLama = $supplier->only(['kode_supplier', 'nama_supplier', 'telepon']);
         $supplier->delete();
+
+        LogAktivitas::catat('supplier', 'delete',
+            "Hapus supplier {$dataLama['nama_supplier']}", $supplier, $dataLama);
 
         return $this->success(null, 'Supplier berhasil dihapus');
     }

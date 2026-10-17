@@ -251,6 +251,10 @@ class BarangDatangController extends Controller
             DB::commit();
 
             $bd->load(['supplier', 'details.kategori']);
+            LogAktivitas::catat('barang_datang', 'create',
+                "Buat barang datang {$bd->kode_bd}", $bd, null,
+                $bd->only(['kode_bd', 'supplier_id', 'tanggal', 'status']));
+
             return $this->success($bd, 'Barang datang berhasil dicatat', 201);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -669,6 +673,10 @@ class BarangDatangController extends Controller
             DB::commit();
 
             $bd->load(['supplier', 'details.kategori', 'dikonfirmasiOleh']);
+
+            LogAktivitas::catat('barang_datang', 'konfirmasi',
+                "Konfirmasi barang datang {$bd->kode_bd} — stok masuk", $bd);
+
             return $this->success($bd, 'Barang datang dikonfirmasi. Stok telah diperbarui.');
         } catch (\Exception $e) {
             DB::rollBack();

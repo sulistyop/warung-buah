@@ -176,7 +176,12 @@ class PelangganController extends Controller
             return $this->error('Pelanggan masih memiliki piutang. Selesaikan dulu sebelum menghapus.', 422);
         }
 
+        $dataLama = $pelanggan->only(['kode_pelanggan', 'nama', 'telepon']);
         $pelanggan->delete();
+
+        LogAktivitas::catat('pelanggan', 'delete',
+            "Hapus pelanggan {$dataLama['nama']}", $pelanggan, $dataLama);
+
         return $this->success(null, 'Pelanggan berhasil dihapus.');
     }
 }

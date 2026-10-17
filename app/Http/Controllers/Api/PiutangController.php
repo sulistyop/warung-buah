@@ -201,9 +201,10 @@ class PiutangController extends Controller
     }
 
     /**
-     * Daftar tagihan yang SUDAH jatuh tempo (umur >= 7 hari & belum lunas),
-     * dikelompokkan per pelanggan, diurut nama. Untuk section "Perlu Ditagih"
-     * di beranda. Badge umur (7/14/21/28+ hari) dihitung frontend dari umur_hari.
+     * Daftar tagihan yang perlu ditagih HARI INI: transaksi belum lunas yang
+     * umurnya pas kelipatan 7 hari (ke-7, 14, 21, 28, ...), dikelompokkan per
+     * pelanggan, diurut nama. Untuk section "Perlu Ditagih" di beranda — muncul
+     * tiap siklus 7 hari, bukan tiap hari.
      */
     #[OA\Get(
         path: '/api/piutang/tagihan',
@@ -226,8 +227,10 @@ class PiutangController extends Controller
             ->leftJoin('pelanggan', 'transaksi.pelanggan_id', '=', 'pelanggan.id')
             ->whereIn('transaksi.status_bayar', ['tempo', 'cicil'])
             ->where('transaksi.sisa_tagihan', '>', 0)
-            ->whereNotNull('transaksi.tanggal_jatuh_tempo')
-            ->whereDate('transaksi.tanggal_jatuh_tempo', '<=', now())
+            // Hanya yang "perlu ditagih HARI INI": umur transaksi pas kelipatan 7
+            // (hari ke-7, 14, 21, 28, ...). Muncul tiap siklus 7 hari, bukan tiap hari.
+            ->whereRaw('DATEDIFF(CURDATE(), DATE(transaksi.created_at)) >= 7')
+            ->whereRaw('MOD(DATEDIFF(CURDATE(), DATE(transaksi.created_at)), 7) = 0')
             ->groupByRaw('transaksi.pelanggan_id, COALESCE(pelanggan.nama, transaksi.nama_pelanggan)')
             ->orderBy('nama')
             ->get();

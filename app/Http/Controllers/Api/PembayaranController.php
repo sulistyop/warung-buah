@@ -243,7 +243,7 @@ class PembayaranController extends Controller
             $pembayaran->load('user');
 
             LogAktivitas::catat('pembayaran', 'create',
-                ($transaksi->nama_pelanggan ?: '-') . ' · Rp' . number_format($pembayaran->nominal, 0, ',', '.') . ' · ' . $pembayaran->metode,
+                'BU · ' . ($transaksi->nama_pelanggan ?: '-') . ' · Rp' . number_format($pembayaran->nominal, 0, ',', '.') . ' · ' . $pembayaran->metode,
                 $pembayaran, null,
                 $pembayaran->only(['kode_pembayaran', 'nominal', 'metode', 'sisa_tagihan']));
 
@@ -306,7 +306,7 @@ class PembayaranController extends Controller
             }
 
             LogAktivitas::catat('pembayaran', 'delete',
-                (($transaksi->nama_pelanggan ?? '-') ?: '-') . ' · Rp' . number_format($dataLama['nominal'], 0, ',', '.') . ' · ' . $dataLama['metode'],
+                'BU · ' . (($transaksi->nama_pelanggan ?? '-') ?: '-') . ' · Rp' . number_format($dataLama['nominal'], 0, ',', '.') . ' · ' . $dataLama['metode'],
                 $pembayaran, $dataLama);
 
             DB::commit();

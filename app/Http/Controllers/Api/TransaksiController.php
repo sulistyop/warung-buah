@@ -585,6 +585,20 @@ class TransaksiController extends Controller
                 'user',
             ]);
 
+            $totalBs = (float) $transaksi->komplainTransaksi->sum('jumlah_bs');
+            $bsTxt = ($totalBs == (int) $totalBs)
+                ? (string) (int) $totalBs
+                : rtrim(rtrim(number_format($totalBs, 2, '.', ''), '0'), '.');
+            $rincian = $transaksi->komplainTransaksi->map(fn ($k) => [
+                'produk'     => $k->nama_produk,
+                'jumlah_bs'  => $k->jumlah_bs,
+                'keterangan' => $k->keterangan,
+            ])->toArray();
+            LogAktivitas::catat('transaksi', 'komplain',
+                "Komplain BS {$transaksi->kode_transaksi} ({$transaksi->nama_pelanggan}) - "
+                    . ($totalBs > 0 ? "{$bsTxt} kg" : 'dikosongkan'),
+                $transaksi, null, ['total_bs' => $totalBs, 'rincian' => $rincian]);
+
             return $this->success($transaksi, 'Komplain berhasil disimpan');
 
         } catch (\Exception $e) {
